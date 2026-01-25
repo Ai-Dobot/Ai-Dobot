@@ -2,106 +2,172 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Doctor Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doctor Page - Telemedicine System</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK (compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #status {
+            text-align: center;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        #status.active { background: #d4edda; color: #155724; }
+        #status.error { background: #f8d7da; color: #721c24; }
+        
+        .call-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .call-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .call-info {
+            margin: 8px 0;
+            color: #333;
+        }
+        .call-info strong {
+            display: inline-block;
+            width: 120px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🏥 Doctor Page</h1>
-            <p>Telemedicine System - Receive Patient Calls</p>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Left Panel - Status and Call Info -->
-            <div class="left-panel">
-                <!-- Status Card -->
-                <div class="status-card">
-                    <h2>Doctor Status</h2>
-                    <div id="doctorStatus" class="status-indicator status-available">
-                        Available
-                    </div>
-                </div>
-
-                <!-- Incoming Call Alert -->
-                <div id="incomingCallAlert" class="incoming-call-alert" style="display: none;">
-                    <div class="ringing-animation">
-                        <div class="ring"></div>
-                        <div class="ring"></div>
-                        <div class="ring"></div>
-                    </div>
-                    <h2 class="call-title">📞 Incoming Call</h2>
-                    
-                    <div class="patient-info">
-                        <div class="info-row">
-                            <span class="info-label">Patient Name:</span>
-                            <span id="patientName" class="info-value">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Patient ID:</span>
-                            <span id="patientId" class="info-value">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Symptoms:</span>
-                            <span id="patientSymptoms" class="info-value">-</span>
-                        </div>
-                    </div>
-
-                    <div class="call-actions">
-                        <button id="acceptBtn" class="btn btn-accept" onclick="acceptCall()">
-                            ✅ Accept Call
-                        </button>
-                        <button id="rejectBtn" class="btn btn-reject" onclick="rejectCall()">
-                            ❌ Reject Call
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Idle State -->
-                <div id="idleState" class="idle-state">
-                    <div class="idle-icon">📭</div>
-                    <p>Waiting for incoming calls...</p>
-                    <p class="idle-subtitle">Patients can call you from the Patient Page</p>
-                </div>
-            </div>
-
-            <!-- Right Panel - Video Call -->
-            <div class="right-panel">
-                <div class="video-section">
-                    <h2>📹 Video Consultation</h2>
-                    
-                    <!-- Video Placeholder -->
-                    <div id="videoPlaceholder" class="video-placeholder">
-                        <div class="placeholder-content">
-                            <div class="placeholder-icon">📹</div>
-                            <h3>No Active Call</h3>
-                            <p>Accept an incoming call to start video consultation</p>
-                        </div>
-                    </div>
-
-                    <!-- Jitsi Video Iframe -->
-                    <div id="videoContainer" class="video-container" style="display: none;">
-                        <iframe 
-                            id="jitsiFrame"
-                            allow="camera; microphone; fullscreen; display-capture; autoplay"
-                            src=""
-                            style="height:100%; width:100%; border:0;">
-                        </iframe>
-                    </div>
-
-                    <!-- End Call Button -->
-                    <button id="endCallBtn" class="btn btn-end" onclick="endCall()" style="display: none;">
-                        End Call
-                    </button>
-                </div>
-            </div>
-        </main>
+        <h1>👨‍⚕️ Doctor Dashboard</h1>
+        <div id="status">Initializing...</div>
+        <div id="callsContainer"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // =============================================
+        // 🔥 FIREBASE CONFIG (from your Firebase project)
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1ih39qUdc429FJL6lu-_U1SiVVIU1GbI",
+            authDomain: "ai-dobot.firebaseapp.com",
+            projectId: "ai-dobot",
+            storageBucket: "ai-dobot.firebasestorage.app",
+            messagingSenderId: "110620790793",
+            appId: "1:110620790793:web:6c0034d575a5016b6ea8d8"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        // Your VAPID key
+        const VAPID_KEY = "BDKuFdPP4BzpwVOs059zbUqZ0HV-shQLxP3DpTPNYN6tJmtxaiq89ChvZgWTWbO466g3z3AdsshexItx7uibJ0Q";
+        
+        const statusEl = document.getElementById("status");
+        const callsContainer = document.getElementById("callsContainer");
+
+        // =============================================
+        // 🔔 REQUEST NOTIFICATION PERMISSION
+        // =============================================
+        async function init() {
+            try {
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                console.log('Service Worker registered');
+
+                // Request permission
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    statusEl.textContent = '✅ Notifications Enabled - Waiting for calls...';
+                    statusEl.className = 'active';
+                    
+                    // Get FCM token
+                    const token = await messaging.getToken({ 
+                        vapidKey: VAPID_KEY,
+                        serviceWorkerRegistration: registration
+                    });
+                    
+                    console.log('FCM Token:', token);
+                    
+                    // Send token to backend
+                    await fetch('http://localhost:8000/api/doctor/register-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+                    
+                    console.log('Token registered with backend');
+                } else {
+                    statusEl.textContent = '❌ Notifications blocked';
+                    statusEl.className = 'error';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = '❌ Setup failed: ' + error.message;
+                statusEl.className = 'error';
+            }
+        }
+
+        // =============================================
+        // 📩 RECEIVE MESSAGES (when app is open)
+        // =============================================
+        messaging.onMessage((payload) => {
+            console.log('Incoming call:', payload);
+            
+            // Show notification
+            new Notification(payload.notification.title, {
+                body: payload.notification.body,
+                icon: '/icon.png'
+            });
+            
+            // Display in UI
+            const data = payload.data || {};
+            const callBox = document.createElement('div');
+            callBox.className = 'call-box';
+            callBox.innerHTML = `
+                <h3>📞 Incoming Call</h3>
+                <div class="call-info"><strong>Patient:</strong> ${data.patient_name || 'Unknown'}</div>
+                <div class="call-info"><strong>ID:</strong> ${data.patient_id || 'N/A'}</div>
+                <div class="call-info"><strong>Symptoms:</strong> ${data.symptom || 'Not provided'}</div>
+                <div class="call-info"><strong>Time:</strong> ${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            callsContainer.insertBefore(callBox, callsContainer.firstChild);
+        });
+
+        // Start on page load
+        init();
+    </script>
 </body>
 </html>
-
