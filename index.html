@@ -109,8 +109,8 @@
             appId: "1:110620790793:web:6c0034d575a5016b6ea8d8"
         };
 
+        // Initialize Firebase App (but not messaging yet)
         firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
 
         // VAPID key from Firebase Console
         const VAPID_KEY = "BDKuFdPP4BzpwVOs059zbUqZ0HV-shQLxP3DpTPNYN6tJmtxaiq89ChvZgWTWbO466g3z3AdsshexItx7uibJ0Q";
@@ -121,48 +121,102 @@
         const statusEl = document.getElementById("status");
         const callsContainer = document.getElementById("callsContainer");
         const refreshBtn = document.getElementById("refreshBtn");
+        
+        // Store service worker registration and messaging instance globally
+        let serviceWorkerRegistration = null;
+        let messagingInstance = null;
+
+        // =============================================
+        // 🔍 CHECK IF SERVICE WORKER FILE EXISTS
+        // =============================================
+        async function checkServiceWorkerFile(path) {
+            try {
+                const response = await fetch(path, { method: 'HEAD' });
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
 
         // =============================================
         // 🔧 REGISTER SERVICE WORKER
         // =============================================
         async function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                try {
-                    // Try different paths for GitHub Pages
-                    const paths = [
-                        '/firebase-messaging-sw.js',
-                        './firebase-messaging-sw.js',
-                        'firebase-messaging-sw.js'
-                    ];
-                    
-                    let registration = null;
-                    let lastError = null;
-                    
-                    for (const path of paths) {
-                        try {
-                            console.log(`Trying to register service worker at: ${path}`);
-                            registration = await navigator.serviceWorker.register(path, {
-                                scope: './'
-                            });
-                            console.log('✅ Service Worker registered at:', path);
-                            break;
-                        } catch (err) {
-                            console.warn(`Failed to register at ${path}:`, err.message);
-                            lastError = err;
-                        }
-                    }
-                    
-                    if (!registration) {
-                        throw lastError || new Error('Could not register service worker at any path');
-                    }
-                    
-                    return registration;
-                } catch (error) {
-                    console.error('❌ Service Worker registration failed:', error);
-                    throw new Error(`Service Worker registration failed: ${error.message}. Make sure firebase-messaging-sw.js is accessible.`);
-                }
-            } else {
+            if (!('serviceWorker' in navigator)) {
                 throw new Error('Service Workers are not supported in this browser');
+            }
+            
+            try {
+                // Try different paths for GitHub Pages
+                // For GitHub Pages, try root path first, then relative paths
+                const basePath = window.location.pathname.replace(/\/[^/]*$/, '') || '/';
+                const paths = [
+                    basePath + '/firebase-messaging-sw.js',
+                    '/firebase-messaging-sw.js',
+                    './firebase-messaging-sw.js',
+                    'firebase-messaging-sw.js',
+                    basePath + 'firebase-messaging-sw.js',
+                    window.location.origin + '/firebase-messaging-sw.js',
+                    window.location.origin + basePath + '/firebase-messaging-sw.js'
+                ];
+                
+                // First, check which file actually exists
+                console.log('🔍 Checking for service worker file...');
+                let validPath = null;
+                for (const path of paths) {
+                    const exists = await checkServiceWorkerFile(path);
+                    if (exists) {
+                        validPath = path;
+                        console.log(`✅ Found service worker at: ${path}`);
+                        break;
+                    }
+                }
+                
+                if (!validPath) {
+                    // Try to register anyway (might work if file exists but HEAD request failed)
+                    console.log('⚠️ Could not verify file exists, trying to register anyway...');
+                    validPath = paths[0]; // Try first path
+                }
+                
+                // Now try to register
+                let registration = null;
+                let lastError = null;
+                
+                for (const path of paths) {
+                    try {
+                        console.log(`📝 Attempting to register service worker at: ${path}`);
+                        registration = await navigator.serviceWorker.register(path, {
+                            scope: basePath || './'
+                        });
+                        console.log('✅ Service Worker registered successfully at:', path);
+                        break;
+                    } catch (err) {
+                        console.warn(`❌ Failed to register at ${path}:`, err.message);
+                        lastError = err;
+                    }
+                }
+                
+                if (!registration) {
+                    const errorMsg = `Service Worker registration failed. 
+                    
+Tried paths:
+${paths.map(p => `  - ${p}`).join('\n')}
+
+💡 Solutions:
+1. Make sure firebase-messaging-sw.js is in the same directory as index.html
+2. If using GitHub Pages, ensure the file is committed and pushed
+3. Check GitHub Pages settings - the file should be accessible at: ${window.location.origin}/firebase-messaging-sw.js
+4. Wait a few minutes after pushing - GitHub Pages can take time to update`;
+                    
+                    console.error(errorMsg);
+                    throw new Error('Service Worker file not found. See console for details.');
+                }
+                
+                serviceWorkerRegistration = registration;
+                return registration;
+            } catch (error) {
+                console.error('❌ Service Worker registration failed:', error);
+                throw error;
             }
         }
 
@@ -204,10 +258,14 @@
                 await testBackendConnection();
                 console.log('✅ Backend connection OK');
                 
-                // Step 1: Register Service Worker (REQUIRED for FCM)
-                console.log('Step 1: Registering service worker...');
+                // Step 1: Register Service Worker FIRST (REQUIRED for FCM)
+                // This MUST happen before Firebase Messaging initializes
+                console.log('Step 1: Registering service worker (BEFORE Firebase)...');
                 await registerServiceWorker();
-                console.log('✅ Service worker registered');
+                console.log('✅ Service worker registered and ready');
+                
+                // Small delay to ensure service worker is fully registered
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // Step 2: Request notification permission
                 console.log('Step 2: Requesting notification permission...');
@@ -220,10 +278,21 @@
                     return;
                 }
                 
-                // Step 3: Get FCM token
-                console.log('Step 3: Getting FCM token...');
-                const token = await messaging.getToken({ 
-                    vapidKey: VAPID_KEY
+                // Step 3: Initialize Firebase Messaging
+                // Firebase should now use the already-registered service worker
+                console.log('Step 3: Initializing Firebase Messaging (using registered service worker)...');
+                messagingInstance = firebase.messaging();
+                
+                // Verify service worker is still registered
+                if (!serviceWorkerRegistration) {
+                    throw new Error('Service worker registration lost. Please refresh the page.');
+                }
+                
+                // Step 4: Get FCM token (use the registered service worker)
+                console.log('Step 4: Getting FCM token...');
+                const token = await messagingInstance.getToken({ 
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: serviceWorkerRegistration
                 });
                 
                 if (!token) {
@@ -232,8 +301,8 @@
                 
                 console.log('✅ FCM Token received:', token.substring(0, 20) + '...');
                 
-                // Step 4: Send token to backend
-                console.log('Step 4: Registering token with backend...');
+                // Step 5: Send token to backend
+                console.log('Step 5: Registering token with backend...');
                 const response = await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
                     method: 'POST',
                     headers: { 
@@ -252,6 +321,10 @@
                 const result = await response.json();
                 console.log('Backend response:', result);
                 
+                // Step 6: Setup message handlers
+                setupMessageHandlers();
+                setupTokenRefresh();
+                
                 statusEl.textContent = '✅ Ready - Waiting for patient calls...';
                 statusEl.className = 'active';
                 refreshBtn.style.display = 'none';
@@ -263,8 +336,13 @@
                 refreshBtn.style.display = 'block';
                 
                 // Show detailed error in console
-                if (error.message.includes('service worker')) {
-                    console.error('💡 Tip: Make sure firebase-messaging-sw.js is in the root of your GitHub Pages site');
+                if (error.message.includes('Service Worker') || error.message.includes('service worker')) {
+                    console.error('💡 SERVICE WORKER TROUBLESHOOTING:');
+                    console.error('1. Verify firebase-messaging-sw.js exists in your repository');
+                    console.error('2. Check GitHub Pages URL:', window.location.origin);
+                    console.error('3. Try accessing:', window.location.origin + '/firebase-messaging-sw.js');
+                    console.error('4. If 404, the file is not deployed. Commit and push the file.');
+                    console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
                 }
                 if (error.message.includes('CORS')) {
                     console.error('💡 Tip: Check CORS settings in backend.py');
@@ -276,9 +354,12 @@
         }
 
         // =============================================
-        // 📩 RECEIVE MESSAGES (foreground)
+        // 📩 SETUP MESSAGE HANDLERS
         // =============================================
-        messaging.onMessage((payload) => {
+        function setupMessageHandlers() {
+            if (!messagingInstance) return;
+            
+            messagingInstance.onMessage((payload) => {
             console.log('📨 Incoming message received:', payload);
             
             try {
@@ -316,23 +397,31 @@
             } catch (error) {
                 console.error('❌ Error handling message:', error);
             }
-        });
+            });
+        }
 
-        // Handle token refresh
-        messaging.onTokenRefresh(async () => {
-            console.log('🔄 Token refreshed, re-registering...');
-            try {
-                const newToken = await messaging.getToken({ vapidKey: VAPID_KEY });
-                await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: newToken })
+        // Handle token refresh (will be set up after messaging is initialized)
+        function setupTokenRefresh() {
+            if (messagingInstance) {
+                messagingInstance.onTokenRefresh(async () => {
+                    console.log('🔄 Token refreshed, re-registering...');
+                    try {
+                        const newToken = await messagingInstance.getToken({ 
+                            vapidKey: VAPID_KEY,
+                            serviceWorkerRegistration: serviceWorkerRegistration
+                        });
+                        await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: newToken })
+                        });
+                        console.log('✅ New token registered');
+                    } catch (error) {
+                        console.error('❌ Failed to register new token:', error);
+                    }
                 });
-                console.log('✅ New token registered');
-            } catch (error) {
-                console.error('❌ Failed to register new token:', error);
             }
-        });
+        }
 
         // =============================================
         // 🎨 DISPLAY CALL IN UI
