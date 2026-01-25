@@ -1,0 +1,359 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.header p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Main Content */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    padding: 20px;
+    min-height: 600px;
+}
+
+@media (max-width: 968px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Left Panel */
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Status Card */
+.status-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #dee2e6;
+}
+
+.status-card h2 {
+    color: #212529;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.status-indicator {
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.status-available {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-busy {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Incoming Call Alert */
+.incoming-call-alert {
+    background: white;
+    border: 3px solid #ffc107;
+    border-radius: 10px;
+    padding: 25px;
+    text-align: center;
+    position: relative;
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    50% {
+        border-color: #ff9800;
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+}
+
+.call-title {
+    color: #007bff;
+    font-size: 24px;
+    margin: 20px 0;
+}
+
+/* Ringing Animation */
+.ringing-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    position: relative;
+    height: 80px;
+}
+
+.ring {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 3px solid #ffc107;
+    border-radius: 50%;
+    animation: ring-pulse 1.5s infinite;
+}
+
+.ring:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.ring:nth-child(2) {
+    animation-delay: 0.5s;
+    width: 80px;
+    height: 80px;
+}
+
+.ring:nth-child(3) {
+    animation-delay: 1s;
+    width: 100px;
+    height: 100px;
+}
+
+@keyframes ring-pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Patient Info */
+.patient-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #495057;
+    min-width: 120px;
+}
+
+.info-value {
+    color: #212529;
+    text-align: right;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin: 5px 0;
+}
+
+.btn-accept {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-accept:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+.btn-reject {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-reject:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+}
+
+.btn-end {
+    background-color: #dc3545;
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.btn-end:hover {
+    background-color: #c82333;
+}
+
+/* Idle State */
+.idle-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.idle-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.idle-state p {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.idle-subtitle {
+    font-size: 14px;
+    color: #adb5bd;
+}
+
+/* Right Panel - Video */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.video-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #dee2e6;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.video-section h2 {
+    color: #212529;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.video-placeholder {
+    flex: 1;
+    background: #000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: #6c757d;
+}
+
+.placeholder-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.placeholder-content h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.placeholder-content p {
+    font-size: 16px;
+    color: #6c757d;
+}
+
+.video-container {
+    flex: 1;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 22px;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    .video-container,
+    .video-placeholder {
+        min-height: 400px;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .info-value {
+        text-align: left;
+    }
+}
+

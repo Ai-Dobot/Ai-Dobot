@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Page - Telemedicine System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏥 Doctor Page</h1>
+            <p>Telemedicine System - Receive Patient Calls</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Status and Call Info -->
+            <div class="left-panel">
+                <!-- Status Card -->
+                <div class="status-card">
+                    <h2>Doctor Status</h2>
+                    <div id="doctorStatus" class="status-indicator status-available">
+                        Available
+                    </div>
+                </div>
+
+                <!-- Incoming Call Alert -->
+                <div id="incomingCallAlert" class="incoming-call-alert" style="display: none;">
+                    <div class="ringing-animation">
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                    </div>
+                    <h2 class="call-title">📞 Incoming Call</h2>
+                    
+                    <div class="patient-info">
+                        <div class="info-row">
+                            <span class="info-label">Patient Name:</span>
+                            <span id="patientName" class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Patient ID:</span>
+                            <span id="patientId" class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Symptoms:</span>
+                            <span id="patientSymptoms" class="info-value">-</span>
+                        </div>
+                    </div>
+
+                    <div class="call-actions">
+                        <button id="acceptBtn" class="btn btn-accept" onclick="acceptCall()">
+                            ✅ Accept Call
+                        </button>
+                        <button id="rejectBtn" class="btn btn-reject" onclick="rejectCall()">
+                            ❌ Reject Call
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Idle State -->
+                <div id="idleState" class="idle-state">
+                    <div class="idle-icon">📭</div>
+                    <p>Waiting for incoming calls...</p>
+                    <p class="idle-subtitle">Patients can call you from the Patient Page</p>
+                </div>
+            </div>
+
+            <!-- Right Panel - Video Call -->
+            <div class="right-panel">
+                <div class="video-section">
+                    <h2>📹 Video Consultation</h2>
+                    
+                    <!-- Video Placeholder -->
+                    <div id="videoPlaceholder" class="video-placeholder">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">📹</div>
+                            <h3>No Active Call</h3>
+                            <p>Accept an incoming call to start video consultation</p>
+                        </div>
+                    </div>
+
+                    <!-- Jitsi Video Iframe -->
+                    <div id="videoContainer" class="video-container" style="display: none;">
+                        <iframe 
+                            id="jitsiFrame"
+                            allow="camera; microphone; fullscreen; display-capture; autoplay"
+                            src=""
+                            style="height:100%; width:100%; border:0;">
+                        </iframe>
+                    </div>
+
+                    <!-- End Call Button -->
+                    <button id="endCallBtn" class="btn btn-end" onclick="endCall()" style="display: none;">
+                        End Call
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
