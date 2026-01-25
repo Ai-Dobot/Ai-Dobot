@@ -431,24 +431,39 @@ ${paths.map(p => `  - ${p}`).join('\n')}
 
         // Handle token refresh (will be set up after messaging is initialized)
         function setupTokenRefresh() {
-            if (messagingInstance) {
-                messagingInstance.onTokenRefresh(async () => {
-                    console.log('🔄 Token refreshed, re-registering...');
+            if (!messagingInstance || !serviceWorkerRegistration) {
+                return;
+            }
+            
+            // Firebase compat API doesn't have onTokenRefresh method
+            // Firebase handles token refresh automatically, but we can set up a periodic check
+            // to re-register the token with our backend if it changes
+            try {
+                // Periodically check token and re-register if needed (every 10 minutes)
+                setInterval(async () => {
                     try {
-                        const newToken = await messagingInstance.getToken({ 
+                        const currentToken = await messagingInstance.getToken({ 
                             vapidKey: VAPID_KEY,
                             serviceWorkerRegistration: serviceWorkerRegistration
                         });
-                        await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ token: newToken })
-                        });
-                        console.log('✅ New token registered');
+                        if (currentToken) {
+                            // Re-register with backend to ensure we have the latest token
+                            await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ token: currentToken })
+                            });
+                            console.log('🔄 Token re-registered with backend');
+                        }
                     } catch (error) {
-                        console.error('❌ Failed to register new token:', error);
+                        console.warn('⚠️ Token refresh check failed:', error);
                     }
-                });
+                }, 600000); // Check every 10 minutes
+                
+                console.log('✅ Token refresh monitoring set up (periodic check every 10 minutes)');
+            } catch (error) {
+                console.warn('⚠️ Could not set up token refresh monitoring:', error);
+                // This is not critical - Firebase will handle token refresh automatically
             }
         }
 
