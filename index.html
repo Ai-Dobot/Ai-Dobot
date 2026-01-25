@@ -88,7 +88,9 @@
             1. Patient uses robot (Qt app) to call<br>
             2. Robot sends request to backend (Render)<br>
             3. Backend sends notification here via Firebase<br>
-            4. You receive patient details instantly!
+            4. You receive patient details instantly!<br>
+            <br>
+            <strong>📱 Mobile Note:</strong> On mobile devices, notifications work through Firebase Cloud Messaging (native push notifications). Browser notification permission is not required.
         </div>
         
         <div id="status">Initializing...</div>
@@ -125,6 +127,18 @@
         // Store service worker registration and messaging instance globally
         let serviceWorkerRegistration = null;
         let messagingInstance = null;
+        
+        // Detect if running on mobile or in WebView
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isWebView = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        const hasNotificationAPI = typeof Notification !== 'undefined';
+        
+        console.log('📱 Device info:', {
+            isMobile,
+            isWebView,
+            hasNotificationAPI,
+            userAgent: navigator.userAgent.substring(0, 50)
+        });
 
         // =============================================
         // 🔍 CHECK IF SERVICE WORKER FILE EXISTS
@@ -296,15 +310,24 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 // Small delay to ensure service worker is fully registered
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                // Step 2: Request notification permission
-                console.log('Step 2: Requesting notification permission...');
-                const permission = await Notification.requestPermission();
-                console.log('Permission:', permission);
+                // Step 2: Request notification permission (if available)
+                console.log('Step 2: Checking notification support...');
                 
-                if (permission !== 'granted') {
-                    statusEl.textContent = '❌ Please enable notifications in your browser settings';
-                    statusEl.className = 'error';
-                    return;
+                // Check if Notification API is available
+                if (typeof Notification === 'undefined') {
+                    console.warn('⚠️ Notification API not available (likely mobile WebView)');
+                    console.log('ℹ️ Using Firebase Cloud Messaging for notifications instead');
+                    // On mobile, Firebase handles notifications natively, so we can continue
+                } else {
+                    // Desktop browser - request permission
+                    console.log('Requesting notification permission...');
+                    const permission = await Notification.requestPermission();
+                    console.log('Permission:', permission);
+                    
+                    if (permission !== 'granted') {
+                        console.warn('⚠️ Browser notifications not granted, but continuing with FCM...');
+                        // Still continue - Firebase can send notifications even without browser permission
+                    }
                 }
                 
                 // Step 3: Initialize Firebase Messaging
@@ -360,7 +383,14 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 console.log('✅ Successfully registered with backend');
             } catch (error) {
                 console.error('❌ Initialization error:', error);
-                statusEl.textContent = '❌ Setup failed: ' + error.message;
+                
+                // Provide mobile-specific error messages
+                let errorMessage = error.message;
+                if (isMobile && error.message.includes('Notification')) {
+                    errorMessage = 'Mobile device detected. Firebase will handle notifications natively. ' + error.message;
+                }
+                
+                statusEl.textContent = '❌ Setup failed: ' + errorMessage;
                 statusEl.className = 'error';
                 refreshBtn.style.display = 'block';
                 
@@ -372,6 +402,12 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                     console.error('3. Try accessing:', window.location.origin + '/firebase-messaging-sw.js');
                     console.error('4. If 404, the file is not deployed. Commit and push the file.');
                     console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
+                }
+                if (error.message.includes('Notification') && isMobile) {
+                    console.error('💡 MOBILE NOTIFICATION INFO:');
+                    console.error('On mobile devices, Firebase Cloud Messaging handles notifications natively.');
+                    console.error('Browser Notification API is not required for mobile apps.');
+                    console.error('The app should still work - notifications will come through Firebase.');
                 }
                 if (error.message.includes('CORS')) {
                     console.error('💡 Tip: Check CORS settings in backend.py');
@@ -396,23 +432,30 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVa3n7qxYEw==');
                 audio.play().catch((err) => console.warn('Audio play failed:', err));
                 
-                // Show browser notification
-                if (Notification.permission === 'granted') {
-                    const notification = new Notification(
-                        payload.notification?.title || '🚨 New Patient Call',
-                        {
-                            body: payload.notification?.body || 'A patient is calling',
-                            icon: '/icon.png',
-                            badge: '/badge.png',
-                            requireInteraction: true,
-                            tag: 'patient-call-' + Date.now()
-                        }
-                    );
-                    
-                    notification.onclick = () => {
-                        window.focus();
-                        notification.close();
-                    };
+                // Show browser notification (if Notification API is available)
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                    try {
+                        const notification = new Notification(
+                            payload.notification?.title || '🚨 New Patient Call',
+                            {
+                                body: payload.notification?.body || 'A patient is calling',
+                                icon: '/icon.png',
+                                badge: '/badge.png',
+                                requireInteraction: true,
+                                tag: 'patient-call-' + Date.now()
+                            }
+                        );
+                        
+                        notification.onclick = () => {
+                            window.focus();
+                            notification.close();
+                        };
+                    } catch (error) {
+                        console.warn('Could not show browser notification:', error);
+                        // Continue anyway - Firebase will handle notifications
+                    }
+                } else {
+                    console.log('ℹ️ Browser notifications not available - using Firebase native notifications');
                 }
                 
                 // Display in UI
