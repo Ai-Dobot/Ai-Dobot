@@ -151,9 +151,12 @@
     </div>
     
     <div id="videoContainer" class="video-container">
-        <iframe id="videoIframe" class="video-iframe" allow="camera; microphone; fullscreen"></iframe>
+        <div id="jitsiContainer" style="width: 100%; height: 100%;"></div>
         <button id="endCallBtn" class="end-call-btn" onclick="endVideoCall()">🔴 End Call</button>
     </div>
+    
+    <!-- Jitsi Meet External API -->
+    <script src="https://8x8.vc/external_api.js"></script>
 
     <script>
         // =============================================
@@ -184,6 +187,7 @@
         // Store service worker registration and messaging instance globally
         let serviceWorkerRegistration = null;
         let messagingInstance = null;
+        let jitsiApi = null; // Jitsi Meet API instance
         
         // Detect if running on mobile or in WebView/APK
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -546,6 +550,9 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 statusEl.className = 'active';
                 refreshBtn.style.display = 'none';
                 console.log('✅ Successfully registered with backend');
+                
+                // Check if we need to start video from notification click
+                startVideoFromNotificationIfNeeded();
             } catch (error) {
                 console.error('❌ Initialization error:', error);
                 
@@ -656,6 +663,10 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                         statusEl.className = 'active';
                         refreshBtn.style.display = 'none';
                         console.log(`✅ Successfully registered with backend (${modeText})`);
+                        
+                        // Check if we need to start video from notification click
+                        startVideoFromNotificationIfNeeded();
+                        
                         return; // Success - exit error handler
                     } catch (retryError) {
                         // If retry also fails, show error
@@ -794,10 +805,14 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 };
                 showCall(callData);
                 
-                // Auto-start video call if URL is available (notification click)
+                // Auto-start video call if URL is available (foreground notification)
+                // This handles when app is already open and notification is received
                 if (callData.video_call_url) {
-                    console.log('🎥 Video call URL received, starting call...');
-                    startVideoCall(callData.video_call_url, callData);
+                    console.log('🎥 Video call URL received in foreground, starting call immediately...');
+                    // Small delay to ensure UI is ready
+                    setTimeout(() => {
+                        startVideoCall(callData.video_call_url, callData);
+                    }, 500);
                 }
             } catch (error) {
                 console.error('❌ Error handling message:', error);
@@ -879,53 +894,236 @@ ${paths.map(p => `  - ${p}`).join('\n')}
         function startVideoCall(videoUrl, callData) {
             console.log('🎥 Starting video call:', videoUrl);
             const videoContainer = document.getElementById('videoContainer');
-            const videoIframe = document.getElementById('videoIframe');
+            const jitsiContainer = document.getElementById('jitsiContainer');
             
-            if (!videoContainer || !videoIframe) {
+            if (!videoContainer || !jitsiContainer) {
                 console.error('Video container elements not found');
                 return;
             }
             
-            videoIframe.src = videoUrl;
-            videoContainer.classList.add('active');
+            // Extract room name from URL
+            // URL format: https://meet.jit.si/ROOM_NAME
+            let roomName = '';
+            try {
+                const url = new URL(videoUrl);
+                roomName = url.pathname.substring(1); // Remove leading slash
+                if (!roomName) {
+                    // Fallback: extract from URL string
+                    const match = videoUrl.match(/meet\.jit\.si\/([^\/\?#]+)/);
+                    roomName = match ? match[1] : 'telemedicine-call-' + Date.now();
+                }
+            } catch (e) {
+                console.warn('Could not parse URL, using fallback room name');
+                roomName = 'telemedicine-call-' + Date.now();
+            }
             
-            // Focus on video container
-            videoContainer.focus();
+            console.log('📹 Room name:', roomName);
+            
+            // Clean up any existing Jitsi instance
+            if (jitsiApi) {
+                try {
+                    jitsiApi.dispose();
+                } catch (e) {
+                    console.warn('Error disposing previous Jitsi instance:', e);
+                }
+                jitsiApi = null;
+            }
+            
+            // Clear container
+            jitsiContainer.innerHTML = '';
+            
+            // Initialize Jitsi Meet External API with auto-join
+            const domain = 'meet.jit.si';
+            const options = {
+                roomName: roomName,
+                parentNode: jitsiContainer,
+                width: '100%',
+                height: '100%',
+                configOverwrite: {
+                    prejoinPageEnabled: false,        // NO pre-join screen
+                    requireDisplayName: false,        // NO name prompt
+                    enableWelcomePage: false,         // NO welcome page
+                    disableDeepLinking: true,         // Disable deep linking
+                    startWithAudioMuted: false,      // Start with audio ON
+                    startWithVideoMuted: false,       // Start with video ON
+                    enableLayerSuspension: true,
+                    enableNoAudioDetection: true,
+                    enableNoisyMicDetection: true,
+                    enableTalkWhileMuted: false,
+                    enableClosePage: true,
+                    disableInviteFunctions: true,     // Disable invite buttons
+                    disableRemoteMute: false,
+                    enableInsecureRoomNameWarning: false,
+                    enableTCC: true,
+                    p2p: {
+                        enabled: true,
+                        stunServers: [
+                            { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
+                        ]
+                    },
+                    lobby: {
+                        enabled: false                // NO waiting room
+                    },
+                    toolbarButtons: [
+                        'microphone',
+                        'camera',
+                        'closedcaptions',
+                        'desktop',
+                        'fullscreen',
+                        'fodeviceselection',
+                        'hangup',
+                        'profile',
+                        'recording',
+                        'settings',
+                        'raisehand',
+                        'videoquality',
+                        'filmstrip',
+                        'feedback',
+                        'stats',
+                        'shortcuts'
+                    ]
+                },
+                interfaceConfigOverwrite: {
+                    TOOLBAR_BUTTONS: [
+                        'microphone',
+                        'camera',
+                        'closedcaptions',
+                        'desktop',
+                        'fullscreen',
+                        'fodeviceselection',
+                        'hangup',
+                        'profile',
+                        'recording',
+                        'settings',
+                        'raisehand',
+                        'videoquality',
+                        'filmstrip',
+                        'feedback',
+                        'stats',
+                        'shortcuts'
+                    ],
+                    SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile'],
+                    DEFAULT_BACKGROUND: '#667eea',
+                    INITIAL_TOOLBAR_TIMEOUT: 20000,
+                    TOOLBAR_TIMEOUT: 4000,
+                    HIDE_INVITE_MORE_HEADER: true
+                },
+                userInfo: {
+                    displayName: '',                  // Empty name - no prompt
+                    email: ''                         // Empty email - no prompt
+                },
+                onload: function() {
+                    console.log('✅ Jitsi Meet loaded');
+                }
+            };
+            
+            try {
+                // Initialize Jitsi Meet API
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+                console.log('✅ Jitsi Meet API initialized');
+                
+                // Event handlers
+                jitsiApi.addEventListener('videoConferenceJoined', () => {
+                    console.log('✅ Joined video conference');
+                });
+                
+                jitsiApi.addEventListener('readyToClose', () => {
+                    console.log('🔴 Ready to close');
+                    endVideoCall();
+                });
+                
+                jitsiApi.addEventListener('participantLeft', (event) => {
+                    console.log('👋 Participant left:', event);
+                });
+                
+                // Show video container
+                videoContainer.classList.add('active');
+                
+                // Focus on video container
+                videoContainer.focus();
+                
+            } catch (error) {
+                console.error('❌ Error initializing Jitsi Meet:', error);
+                alert('Failed to start video call. Please try again.');
+            }
         }
 
         function endVideoCall() {
             console.log('🔴 Ending video call');
-            const videoContainer = document.getElementById('videoContainer');
-            const videoIframe = document.getElementById('videoIframe');
             
-            if (videoIframe) {
-                videoIframe.src = '';
+            // Dispose Jitsi API instance
+            if (jitsiApi) {
+                try {
+                    jitsiApi.executeCommand('hangup');
+                    jitsiApi.dispose();
+                    console.log('✅ Jitsi API disposed');
+                } catch (e) {
+                    console.warn('Error disposing Jitsi API:', e);
+                }
+                jitsiApi = null;
             }
             
+            // Clear container
+            const jitsiContainer = document.getElementById('jitsiContainer');
+            if (jitsiContainer) {
+                jitsiContainer.innerHTML = '';
+            }
+            
+            // Hide video container
+            const videoContainer = document.getElementById('videoContainer');
             if (videoContainer) {
                 videoContainer.classList.remove('active');
             }
         }
 
-        // Handle messages from service worker (notification clicks)
-        navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'START_VIDEO_CALL') {
-                console.log('🎥 Starting video call from service worker:', event.data.videoUrl);
-                startVideoCall(event.data.videoUrl, {});
-            }
-        });
+        // Handle messages from service worker (notification clicks when app is open)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'START_VIDEO_CALL') {
+                    console.log('🎥 Starting video call from service worker notification click:', event.data.videoUrl);
+                    // Start video call immediately
+                    setTimeout(() => {
+                        startVideoCall(event.data.videoUrl, {});
+                    }, 300);
+                }
+            });
+        }
 
-        // Check URL for video parameter (when app opens from notification)
-        window.addEventListener('load', () => {
+        // Check URL for video parameter (when app opens from notification click)
+        // This handles mobile notification clicks that open the app
+        let videoUrlFromNotification = null;
+        
+        function checkVideoUrlAndStart() {
             const urlParams = new URLSearchParams(window.location.search);
             const videoUrl = urlParams.get('video');
             if (videoUrl) {
-                console.log('🎥 Video URL found in query string, starting call...');
-                setTimeout(() => {
-                    startVideoCall(decodeURIComponent(videoUrl), {});
-                }, 1000); // Wait for page to load
+                videoUrlFromNotification = decodeURIComponent(videoUrl);
+                console.log('🎥 Video URL found in query string (from notification click):', videoUrlFromNotification);
+                console.log('🎥 Will start video call after app initializes...');
+                
+                // Clean URL to remove parameter
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
             }
-        });
+        }
+
+        // Check on page load
+        window.addEventListener('load', checkVideoUrlAndStart);
+        
+        // Also check immediately (in case this script runs before page load)
+        checkVideoUrlAndStart();
+        
+        // Function to start video from notification (called after app initializes)
+        function startVideoFromNotificationIfNeeded() {
+            if (videoUrlFromNotification) {
+                console.log('🎥 Starting video call from notification click...');
+                setTimeout(() => {
+                    startVideoCall(videoUrlFromNotification, {});
+                    videoUrlFromNotification = null; // Clear after starting
+                }, 500);
+            }
+        }
 
         // Start on page load
         init();
