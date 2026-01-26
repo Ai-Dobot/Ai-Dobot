@@ -187,6 +187,8 @@
         
         // Detect if running on mobile or in WebView/APK
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
         const isWebView = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
         
         // Detect if running in APK/WebView wrapper (not PWA)
@@ -203,10 +205,17 @@
         const hasServiceWorkerSupport = 'serviceWorker' in navigator;
         
         // Safely check for Notification API without throwing errors
+        // iOS has limited Notification API support, especially in Chrome
         let hasNotificationAPI = false;
         let NotificationAPI = null;
         try {
-            if (typeof window !== 'undefined' && 'Notification' in window) {
+            // iOS Safari/Chrome has very limited Notification API support
+            if (isIOS) {
+                // iOS doesn't support Notification API in most browsers
+                hasNotificationAPI = false;
+                NotificationAPI = null;
+                console.log('ℹ️ iOS detected - Notification API not available (expected)');
+            } else if (typeof window !== 'undefined' && 'Notification' in window) {
                 NotificationAPI = window.Notification;
                 hasNotificationAPI = typeof NotificationAPI !== 'undefined' && NotificationAPI !== null;
             }
@@ -217,12 +226,21 @@
         
         console.log('📱 Device info:', {
             isMobile,
+            isIOS,
+            isAndroid,
             isWebView,
             isAPK,
             hasNotificationAPI,
             hasServiceWorkerSupport,
             userAgent: navigator.userAgent.substring(0, 80)
         });
+        
+        // iOS-specific info
+        if (isIOS) {
+            console.log('ℹ️ iOS device detected');
+            console.log('ℹ️ Notification API not available on iOS (expected)');
+            console.log('ℹ️ Firebase Cloud Messaging will handle notifications natively');
+        }
         
         // Warn if APK detected without service worker support
         if (isAPK && !hasServiceWorkerSupport) {
@@ -419,11 +437,15 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 console.log('Step 2: Checking notification support...');
                 
                 // Check if Notification API is available - use try-catch for extra safety
-                // Skip Notification API entirely on mobile - Firebase handles it natively
-                if (!hasNotificationAPI || isMobile) {
-                    console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
+                // Skip Notification API entirely on mobile/iOS - Firebase handles it natively
+                if (!hasNotificationAPI || isMobile || isIOS) {
+                    if (isIOS) {
+                        console.log('ℹ️ iOS detected - Skipping browser Notification API (not supported on iOS)');
+                    } else {
+                        console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
+                    }
                     console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
-                    // On mobile, Firebase handles notifications natively, so we can continue
+                    // On mobile/iOS, Firebase handles notifications natively, so we can continue
                 } else {
                     // Desktop browser - try to request permission
                     try {
@@ -530,9 +552,13 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                     return;
                 }
                 
-                // If it's a Notification error on mobile, make it non-fatal
-                if (isMobile && (errorMessage.includes('Notification') || errorMessage.includes('notification'))) {
-                    console.log('ℹ️ Notification error on mobile - this is expected and non-fatal');
+                // If it's a Notification error on mobile/iOS, make it non-fatal
+                if ((isMobile || isIOS) && (errorMessage.includes('Notification') || errorMessage.includes('notification'))) {
+                    if (isIOS) {
+                        console.log('ℹ️ Notification error on iOS - this is expected and non-fatal');
+                    } else {
+                        console.log('ℹ️ Notification error on mobile - this is expected and non-fatal');
+                    }
                     console.log('ℹ️ Firebase Cloud Messaging will handle notifications natively');
                     
                     // Try to continue anyway - Firebase doesn't need Notification API
@@ -623,11 +649,19 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                         console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
                     }
                 }
-                if (error.message.includes('Notification') && isMobile) {
-                    console.error('💡 MOBILE NOTIFICATION INFO:');
-                    console.error('On mobile devices, Firebase Cloud Messaging handles notifications natively.');
-                    console.error('Browser Notification API is not required for mobile apps.');
-                    console.error('The app should still work - notifications will come through Firebase.');
+                if (error.message.includes('Notification') && (isMobile || isIOS)) {
+                    if (isIOS) {
+                        console.error('💡 iOS NOTIFICATION INFO:');
+                        console.error('iOS does NOT support browser Notification API.');
+                        console.error('Firebase Cloud Messaging handles notifications natively on iOS.');
+                        console.error('The app will work - notifications will come through Firebase.');
+                        console.error('Make sure you are using Safari or Chrome with PWA (Add to Home Screen).');
+                    } else {
+                        console.error('💡 MOBILE NOTIFICATION INFO:');
+                        console.error('On mobile devices, Firebase Cloud Messaging handles notifications natively.');
+                        console.error('Browser Notification API is not required for mobile apps.');
+                        console.error('The app should still work - notifications will come through Firebase.');
+                    }
                 }
                 if (error.message.includes('CORS')) {
                     console.error('💡 Tip: Check CORS settings in backend.py');
