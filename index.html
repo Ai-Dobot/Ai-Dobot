@@ -98,12 +98,95 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: #1a1a1a;
             z-index: 10000;
             display: none;
+            flex-direction: column;
+            overflow: hidden;
         }
         .video-container.active {
+            display: flex;
+        }
+        .video-top-section {
+            width: 100%;
+            height: 50vh;
+            min-height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            padding: 20px;
+            position: relative;
+        }
+        #jitsiContainer {
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        /* Make video circular/rounded at top */
+        #jitsiContainer iframe {
+            border-radius: 20px;
+        }
+        .patient-info-section {
+            flex: 1;
+            background: #f5f5f5;
+            overflow-y: auto;
+            padding: 30px;
+            max-height: 50vh;
+        }
+        .patient-info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .patient-info-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .patient-info-item {
+            margin: 15px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .patient-info-item strong {
+            color: #333;
             display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .patient-info-item .value {
+            color: #555;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .symptoms-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .symptoms-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .symptoms-box .symptom-text {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
         }
         .video-iframe {
             width: 100%;
@@ -113,21 +196,37 @@
         .end-call-btn {
             position: fixed;
             bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 20px;
             background-color: #dc3545;
             color: white;
             border: none;
             padding: 15px 30px;
-            border-radius: 8px;
+            border-radius: 50px;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             z-index: 10001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: all 0.3s;
         }
         .end-call-btn:hover {
             background-color: #c82333;
+            transform: scale(1.05);
+        }
+        /* Scrollbar styling for patient info section */
+        .patient-info-section::-webkit-scrollbar {
+            width: 8px;
+        }
+        .patient-info-section::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        .patient-info-section::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        .patient-info-section::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
         }
     </style>
 </head>
@@ -151,7 +250,12 @@
     </div>
     
     <div id="videoContainer" class="video-container">
-        <div id="jitsiContainer" style="width: 100%; height: 100%;"></div>
+        <div class="video-top-section">
+            <div id="jitsiContainer" style="width: 100%; height: 100%;"></div>
+        </div>
+        <div class="patient-info-section" id="patientInfoSection">
+            <!-- Patient information will be displayed here -->
+        </div>
         <button id="endCallBtn" class="end-call-btn" onclick="endVideoCall()">🔴 End Call</button>
     </div>
     
@@ -188,6 +292,7 @@
         let serviceWorkerRegistration = null;
         let messagingInstance = null;
         let jitsiApi = null; // Jitsi Meet API instance
+        let currentCallData = null; // Store current call data for patient info display
         
         // Detect if running on mobile or in WebView/APK
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -932,6 +1037,12 @@ ${paths.map(p => `  - ${p}`).join('\n')}
             // Clear container
             jitsiContainer.innerHTML = '';
             
+            // Store call data for patient info display
+            currentCallData = callData || {};
+            
+            // Display patient information
+            displayPatientInfo(currentCallData);
+            
             // Initialize Jitsi Meet External API with DIRECT JOIN (NO LOGIN, NO PREJOIN)
             const domain = 'meet.jit.si';
             const options = {
@@ -1082,8 +1193,53 @@ ${paths.map(p => `  - ${p}`).join('\n')}
             }
         }
 
+        // Display patient information during video call
+        function displayPatientInfo(callData) {
+            const patientInfoSection = document.getElementById('patientInfoSection');
+            if (!patientInfoSection) return;
+            
+            if (!callData || (!callData.patient_name && !callData.patient_id)) {
+                patientInfoSection.innerHTML = '<div class="patient-info-card"><p style="text-align: center; color: #999;">No patient information available</p></div>';
+                return;
+            }
+            
+            const patientName = callData.patient_name || 'Unknown';
+            const patientId = callData.patient_id || 'N/A';
+            const symptoms = callData.symptom || 'Not provided';
+            const timestamp = callData.timestamp ? new Date(callData.timestamp).toLocaleString() : new Date().toLocaleString();
+            
+            patientInfoSection.innerHTML = `
+                <div class="patient-info-card">
+                    <h2>👤 Patient Information</h2>
+                    <div class="patient-info-item">
+                        <strong>Patient Name</strong>
+                        <div class="value">${patientName}</div>
+                    </div>
+                    <div class="patient-info-item">
+                        <strong>Patient ID</strong>
+                        <div class="value">${patientId}</div>
+                    </div>
+                    <div class="patient-info-item">
+                        <strong>Call Time</strong>
+                        <div class="value">${timestamp}</div>
+                    </div>
+                    <div class="symptoms-box">
+                        <strong>📋 Symptoms / Chief Complaint</strong>
+                        <div class="symptom-text">${symptoms}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
         function endVideoCall() {
             console.log('🔴 Ending video call');
+            
+            // Clear patient info
+            currentCallData = null;
+            const patientInfoSection = document.getElementById('patientInfoSection');
+            if (patientInfoSection) {
+                patientInfoSection.innerHTML = '';
+            }
             
             // Dispose Jitsi API instance
             if (jitsiApi) {
