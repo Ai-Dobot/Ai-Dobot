@@ -131,7 +131,19 @@
         // Detect if running on mobile or in WebView
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isWebView = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-        const hasNotificationAPI = typeof Notification !== 'undefined';
+        
+        // Safely check for Notification API without throwing errors
+        let hasNotificationAPI = false;
+        let NotificationAPI = null;
+        try {
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+                NotificationAPI = window.Notification;
+                hasNotificationAPI = typeof NotificationAPI !== 'undefined' && NotificationAPI !== null;
+            }
+        } catch (e) {
+            console.warn('Could not check Notification API:', e.message);
+            hasNotificationAPI = false;
+        }
         
         console.log('📱 Device info:', {
             isMobile,
@@ -314,29 +326,32 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 console.log('Step 2: Checking notification support...');
                 
                 // Check if Notification API is available - use try-catch for extra safety
-                try {
-                    if (typeof Notification === 'undefined' || Notification === null) {
-                        console.warn('⚠️ Notification API not available (likely mobile WebView)');
-                        console.log('ℹ️ Using Firebase Cloud Messaging for notifications instead');
-                        // On mobile, Firebase handles notifications natively, so we can continue
-                    } else if (typeof Notification.requestPermission === 'function') {
-                        // Desktop browser - request permission
-                        console.log('Requesting notification permission...');
-                        const permission = await Notification.requestPermission();
-                        console.log('Permission:', permission);
-                        
-                        if (permission !== 'granted') {
-                            console.warn('⚠️ Browser notifications not granted, but continuing with FCM...');
-                            // Still continue - Firebase can send notifications even without browser permission
+                // Skip Notification API entirely on mobile - Firebase handles it natively
+                if (!hasNotificationAPI || isMobile) {
+                    console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
+                    console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
+                    // On mobile, Firebase handles notifications natively, so we can continue
+                } else {
+                    // Desktop browser - try to request permission
+                    try {
+                        if (NotificationAPI && typeof NotificationAPI.requestPermission === 'function') {
+                            console.log('Requesting notification permission...');
+                            const permission = await NotificationAPI.requestPermission();
+                            console.log('Permission:', permission);
+                            
+                            if (permission !== 'granted') {
+                                console.warn('⚠️ Browser notifications not granted, but continuing with FCM...');
+                                // Still continue - Firebase can send notifications even without browser permission
+                            }
+                        } else {
+                            console.warn('⚠️ Notification API exists but requestPermission is not available');
+                            console.log('ℹ️ Continuing with Firebase Cloud Messaging...');
                         }
-                    } else {
-                        console.warn('⚠️ Notification API exists but requestPermission is not available');
-                        console.log('ℹ️ Continuing with Firebase Cloud Messaging...');
+                    } catch (error) {
+                        console.warn('⚠️ Error requesting notification permission:', error.message);
+                        console.log('ℹ️ Continuing anyway - Firebase will handle notifications');
+                        // Don't throw - continue with Firebase
                     }
-                } catch (error) {
-                    console.warn('⚠️ Error checking notification support:', error.message);
-                    console.log('ℹ️ Continuing anyway - Firebase will handle notifications');
-                    // Don't throw - continue with Firebase
                 }
                 
                 // Step 3: Initialize Firebase Messaging
@@ -502,23 +517,18 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVa3n7qxYEw==');
                 audio.play().catch((err) => console.warn('Audio play failed:', err));
                 
-                // Show browser notification (if Notification API is available)
-                // Use multiple checks to ensure Notification exists
-                try {
-                    const hasNotification = typeof window !== 'undefined' && 
-                                          typeof Notification !== 'undefined' && 
-                                          Notification !== null &&
-                                          typeof Notification === 'function';
-                    
-                    if (hasNotification) {
+                // Show browser notification (if Notification API is available and on desktop)
+                // On mobile, Firebase handles notifications natively, so skip browser notifications
+                if (hasNotificationAPI && !isMobile && NotificationAPI) {
+                    try {
                         // Check permission safely
-                        const permission = typeof Notification.permission !== 'undefined' 
-                            ? Notification.permission 
+                        const permission = typeof NotificationAPI.permission !== 'undefined' 
+                            ? NotificationAPI.permission 
                             : 'default';
                         
                         if (permission === 'granted') {
                             try {
-                                const notification = new Notification(
+                                const notification = new NotificationAPI(
                                     payload.notification?.title || '🚨 New Patient Call',
                                     {
                                         body: payload.notification?.body || 'A patient is calling',
@@ -536,18 +546,19 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                                     notification.close();
                                 };
                             } catch (error) {
-                                console.warn('Could not show browser notification:', error.message);
+                                console.warn('Could not create browser notification:', error.message);
                                 // Continue anyway - Firebase will handle notifications
                             }
                         } else {
                             console.log('ℹ️ Browser notification permission not granted - using Firebase native notifications');
                         }
-                    } else {
-                        console.log('ℹ️ Browser Notification API not available - using Firebase native notifications');
+                    } catch (error) {
+                        console.warn('Error checking notification support:', error.message);
+                        console.log('ℹ️ Continuing with Firebase native notifications');
                     }
-                } catch (error) {
-                    console.warn('Error checking notification support:', error.message);
-                    console.log('ℹ️ Continuing with Firebase native notifications');
+                } else {
+                    // Mobile or no Notification API - Firebase handles it
+                    console.log('ℹ️ Using Firebase native notifications (mobile or no browser Notification API)');
                 }
                 
                 // Display in UI
