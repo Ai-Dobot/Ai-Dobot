@@ -77,6 +77,58 @@
             width: 130px;
             color: #555;
         }
+        .video-call-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+        .video-call-btn:hover {
+            background-color: #218838;
+        }
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 10000;
+            display: none;
+        }
+        .video-container.active {
+            display: block;
+        }
+        .video-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .end-call-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .end-call-btn:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +148,11 @@
         <div id="status">Initializing...</div>
         <button id="refreshBtn" onclick="init()" style="display: none; padding: 10px 20px; margin: 10px auto; display: block; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">🔄 Retry Connection</button>
         <div id="callsContainer"></div>
+    </div>
+    
+    <div id="videoContainer" class="video-container">
+        <iframe id="videoIframe" class="video-iframe" allow="camera; microphone; fullscreen"></iframe>
+        <button id="endCallBtn" class="end-call-btn" onclick="endVideoCall()">🔴 End Call</button>
     </div>
 
     <script>
@@ -128,9 +185,22 @@
         let serviceWorkerRegistration = null;
         let messagingInstance = null;
         
-        // Detect if running on mobile or in WebView
+        // Detect if running on mobile or in WebView/APK
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isWebView = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        
+        // Detect if running in APK/WebView wrapper (not PWA)
+        // APKs often have specific user agent patterns or lack certain features
+        const isAPK = (() => {
+            const ua = navigator.userAgent.toLowerCase();
+            // Common APK WebView indicators
+            return ua.includes('wv') || // Android WebView
+                   (isMobile && !('serviceWorker' in navigator)) || // Mobile without service workers
+                   (isMobile && window.navigator.userAgent.includes('Version/') && !window.navigator.standalone); // iOS WebView
+        })();
+        
+        // Check service worker support
+        const hasServiceWorkerSupport = 'serviceWorker' in navigator;
         
         // Safely check for Notification API without throwing errors
         let hasNotificationAPI = false;
@@ -148,9 +218,18 @@
         console.log('📱 Device info:', {
             isMobile,
             isWebView,
+            isAPK,
             hasNotificationAPI,
-            userAgent: navigator.userAgent.substring(0, 50)
+            hasServiceWorkerSupport,
+            userAgent: navigator.userAgent.substring(0, 80)
         });
+        
+        // Warn if APK detected without service worker support
+        if (isAPK && !hasServiceWorkerSupport) {
+            console.warn('⚠️ APK/WebView detected without service worker support');
+            console.warn('⚠️ Firebase Cloud Messaging requires service workers');
+            console.warn('💡 Consider using the website version or PWA instead of APK');
+        }
 
         // =============================================
         // 🔍 CHECK IF SERVICE WORKER FILE EXISTS
@@ -168,8 +247,12 @@
         // 🔧 REGISTER SERVICE WORKER
         // =============================================
         async function registerServiceWorker() {
-            if (!('serviceWorker' in navigator)) {
-                throw new Error('Service Workers are not supported in this browser');
+            if (!hasServiceWorkerSupport) {
+                if (isAPK) {
+                    throw new Error('Service Workers are not supported in this APK/WebView. Firebase Cloud Messaging requires service workers. Please use the website version (PWA) instead of APK, or ensure your APK WebView supports service workers.');
+                } else {
+                    throw new Error('Service Workers are not supported in this browser');
+                }
             }
             
             try {
@@ -316,6 +399,16 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 // Step 1: Register Service Worker FIRST (REQUIRED for FCM)
                 // This MUST happen before Firebase Messaging initializes
                 console.log('Step 1: Registering service worker (BEFORE Firebase)...');
+                
+                // Check service worker support first
+                if (!hasServiceWorkerSupport) {
+                    if (isAPK) {
+                        throw new Error('APK/WebView does not support Service Workers. Firebase Cloud Messaging requires service workers. Please:\n1. Use the website version and add to home screen (PWA)\n2. Or use a WebView that supports service workers\n3. Or implement native Firebase SDK in your APK');
+                    } else {
+                        throw new Error('Service Workers are not supported in this browser. Please use a modern browser.');
+                    }
+                }
+                
                 await registerServiceWorker();
                 console.log('✅ Service worker registered and ready');
                 
@@ -411,6 +504,32 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 // Provide mobile-specific error messages
                 let errorMessage = error.message || String(error);
                 
+                // Handle APK/WebView service worker issues
+                if (isAPK && (errorMessage.includes('Service Worker') || errorMessage.includes('service worker'))) {
+                    errorMessage = 'APK/WebView Issue: Service Workers are required for Firebase Cloud Messaging.\n\n' +
+                                 'Solutions:\n' +
+                                 '1. Use the website version and "Add to Home Screen" (PWA) - Recommended\n' +
+                                 '2. Use a WebView that supports Service Workers (Chrome Custom Tabs)\n' +
+                                 '3. Implement native Firebase SDK in your APK instead of WebView\n\n' +
+                                 'The website version works perfectly - just open it in Chrome and add to home screen.';
+                    
+                    statusEl.innerHTML = '❌ APK/WebView Limitation<br><br>' +
+                                       '<small>Service Workers not supported in this APK.<br>' +
+                                       'Please use the website version instead.<br>' +
+                                       'Open in Chrome → Menu → "Add to Home Screen"</small>';
+                    statusEl.className = 'error';
+                    refreshBtn.style.display = 'block';
+                    
+                    console.error('💡 APK TROUBLESHOOTING:');
+                    console.error('Firebase Cloud Messaging for web REQUIRES Service Workers.');
+                    console.error('Most APK WebViews do not support Service Workers properly.');
+                    console.error('RECOMMENDED: Use the website as PWA instead of APK.');
+                    console.error('1. Open the website in Chrome browser');
+                    console.error('2. Menu → "Add to Home Screen"');
+                    console.error('3. This creates a PWA that works perfectly');
+                    return;
+                }
+                
                 // If it's a Notification error on mobile, make it non-fatal
                 if (isMobile && (errorMessage.includes('Notification') || errorMessage.includes('notification'))) {
                     console.log('ℹ️ Notification error on mobile - this is expected and non-fatal');
@@ -481,12 +600,28 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 
                 // Show detailed error in console
                 if (error.message.includes('Service Worker') || error.message.includes('service worker')) {
-                    console.error('💡 SERVICE WORKER TROUBLESHOOTING:');
-                    console.error('1. Verify firebase-messaging-sw.js exists in your repository');
-                    console.error('2. Check GitHub Pages URL:', window.location.origin);
-                    console.error('3. Try accessing:', window.location.origin + '/firebase-messaging-sw.js');
-                    console.error('4. If 404, the file is not deployed. Commit and push the file.');
-                    console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
+                    if (isAPK) {
+                        console.error('💡 APK SERVICE WORKER ISSUE:');
+                        console.error('Most APK WebViews do NOT support Service Workers.');
+                        console.error('Firebase Cloud Messaging REQUIRES Service Workers.');
+                        console.error('');
+                        console.error('SOLUTIONS:');
+                        console.error('1. ✅ BEST: Use website as PWA (not APK)');
+                        console.error('   - Open website in Chrome');
+                        console.error('   - Menu → "Add to Home Screen"');
+                        console.error('   - Works perfectly with notifications');
+                        console.error('');
+                        console.error('2. Use Chrome Custom Tabs in your APK (supports service workers)');
+                        console.error('');
+                        console.error('3. Implement native Firebase SDK in APK (requires native code)');
+                    } else {
+                        console.error('💡 SERVICE WORKER TROUBLESHOOTING:');
+                        console.error('1. Verify firebase-messaging-sw.js exists in your repository');
+                        console.error('2. Check GitHub Pages URL:', window.location.origin);
+                        console.error('3. Try accessing:', window.location.origin + '/firebase-messaging-sw.js');
+                        console.error('4. If 404, the file is not deployed. Commit and push the file.');
+                        console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
+                    }
                 }
                 if (error.message.includes('Notification') && isMobile) {
                     console.error('💡 MOBILE NOTIFICATION INFO:');
@@ -544,6 +679,11 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                                         window.focus();
                                     }
                                     notification.close();
+                                    // Open video call if URL is available
+                                    const videoUrl = data.video_call_url;
+                                    if (videoUrl) {
+                                        startVideoCall(videoUrl, data);
+                                    }
                                 };
                             } catch (error) {
                                 console.warn('Could not create browser notification:', error.message);
@@ -563,12 +703,20 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 
                 // Display in UI
                 const data = payload.data || payload.notification || {};
-                showCall({
+                const callData = {
                     patient_name: data.patient_name || 'Unknown',
                     patient_id: data.patient_id || 'N/A',
                     symptom: data.symptom || data.body || 'Not provided',
+                    video_call_url: data.video_call_url || null,
                     timestamp: new Date().toISOString()
-                });
+                };
+                showCall(callData);
+                
+                // Auto-start video call if URL is available (notification click)
+                if (callData.video_call_url) {
+                    console.log('🎥 Video call URL received, starting call...');
+                    startVideoCall(callData.video_call_url, callData);
+                }
             } catch (error) {
                 console.error('❌ Error handling message:', error);
             }
@@ -619,12 +767,19 @@ ${paths.map(p => `  - ${p}`).join('\n')}
         function showCall(call) {
             const callBox = document.createElement('div');
             callBox.className = 'call-box';
+            
+            let videoButtonHtml = '';
+            if (call.video_call_url) {
+                videoButtonHtml = `<button class="video-call-btn" onclick="startVideoCall('${call.video_call_url}', ${JSON.stringify(call).replace(/'/g, "&#39;")})">🎥 Start Video Call</button>`;
+            }
+            
             callBox.innerHTML = `
                 <h3>📞 New Patient Call</h3>
                 <div class="call-info"><strong>Patient Name:</strong> ${call.patient_name}</div>
                 <div class="call-info"><strong>Patient ID:</strong> ${call.patient_id}</div>
                 <div class="call-info"><strong>Symptoms:</strong> ${call.symptom}</div>
                 <div class="call-info"><strong>Time:</strong> ${new Date(call.timestamp).toLocaleString()}</div>
+                ${videoButtonHtml}
             `;
             
             callsContainer.insertBefore(callBox, callsContainer.firstChild);
@@ -635,6 +790,60 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 setTimeout(() => callBox.remove(), 300);
             }, 300000);
         }
+
+        // =============================================
+        // 🎥 VIDEO CALL FUNCTIONS
+        // =============================================
+        function startVideoCall(videoUrl, callData) {
+            console.log('🎥 Starting video call:', videoUrl);
+            const videoContainer = document.getElementById('videoContainer');
+            const videoIframe = document.getElementById('videoIframe');
+            
+            if (!videoContainer || !videoIframe) {
+                console.error('Video container elements not found');
+                return;
+            }
+            
+            videoIframe.src = videoUrl;
+            videoContainer.classList.add('active');
+            
+            // Focus on video container
+            videoContainer.focus();
+        }
+
+        function endVideoCall() {
+            console.log('🔴 Ending video call');
+            const videoContainer = document.getElementById('videoContainer');
+            const videoIframe = document.getElementById('videoIframe');
+            
+            if (videoIframe) {
+                videoIframe.src = '';
+            }
+            
+            if (videoContainer) {
+                videoContainer.classList.remove('active');
+            }
+        }
+
+        // Handle messages from service worker (notification clicks)
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'START_VIDEO_CALL') {
+                console.log('🎥 Starting video call from service worker:', event.data.videoUrl);
+                startVideoCall(event.data.videoUrl, {});
+            }
+        });
+
+        // Check URL for video parameter (when app opens from notification)
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoUrl = urlParams.get('video');
+            if (videoUrl) {
+                console.log('🎥 Video URL found in query string, starting call...');
+                setTimeout(() => {
+                    startVideoCall(decodeURIComponent(videoUrl), {});
+                }, 1000); // Wait for page to load
+            }
+        });
 
         // Start on page load
         init();
