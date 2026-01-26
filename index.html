@@ -955,6 +955,9 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                     disableRemoteMute: false,
                     enableInsecureRoomNameWarning: false,
                     enableTCC: true,
+                    // Doctor is moderator - they control the meeting
+                    // When doctor joins, the meeting STARTS
+                    defaultLanguage: 'en',
                     p2p: {
                         enabled: true,
                         stunServers: [
@@ -1024,7 +1027,16 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 
                 // Event handlers
                 jitsiApi.addEventListener('videoConferenceJoined', () => {
-                    console.log('✅ Joined video conference');
+                    console.log('✅ Doctor joined video conference - MEETING STARTS NOW');
+                    // Doctor is moderator - when doctor joins, meeting is active
+                    // Patient will see doctor automatically
+                });
+                
+                // Doctor is moderator - check if they have moderator role
+                jitsiApi.addEventListener('participantRoleChanged', (event) => {
+                    if (event.role === 'moderator') {
+                        console.log('👨‍⚕️ Doctor is moderator - meeting is active');
+                    }
                 });
                 
                 jitsiApi.addEventListener('readyToClose', () => {
@@ -1034,6 +1046,7 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 
                 jitsiApi.addEventListener('participantLeft', (event) => {
                     console.log('👋 Participant left:', event);
+                    // If patient left, doctor can end the call
                 });
                 
                 // Show video container
@@ -1078,13 +1091,34 @@ ${paths.map(p => `  - ${p}`).join('\n')}
 
         // Handle messages from service worker (notification clicks when app is open)
         if ('serviceWorker' in navigator) {
+            // Listen for messages from service worker
             navigator.serviceWorker.addEventListener('message', (event) => {
+                console.log('📨 Message received from service worker:', event.data);
                 if (event.data && event.data.type === 'START_VIDEO_CALL') {
                     console.log('🎥 Starting video call from service worker notification click:', event.data.videoUrl);
                     // Start video call immediately
                     setTimeout(() => {
-                        startVideoCall(event.data.videoUrl, {});
+                        if (event.data.videoUrl) {
+                            startVideoCall(event.data.videoUrl, {});
+                        }
                     }, 300);
+                }
+            });
+            
+            // Also listen via message channel for better reliability
+            navigator.serviceWorker.ready.then((registration) => {
+                // Set up message channel listener
+                if (registration.active) {
+                    registration.active.addEventListener('message', (event) => {
+                        console.log('📨 Message from active service worker:', event.data);
+                        if (event.data && event.data.type === 'START_VIDEO_CALL') {
+                            setTimeout(() => {
+                                if (event.data.videoUrl) {
+                                    startVideoCall(event.data.videoUrl, {});
+                                }
+                            }, 300);
+                        }
+                    });
                 }
             });
         }
