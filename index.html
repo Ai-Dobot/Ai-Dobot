@@ -209,11 +209,23 @@
         let hasNotificationAPI = false;
         let NotificationAPI = null;
         
-        // iOS completely skips Notification API - it doesn't exist
+        // iOS completely skips Notification API - it doesn't exist and will cause errors
         if (isIOS) {
             hasNotificationAPI = false;
             NotificationAPI = null;
             console.log('ℹ️ iOS detected - Notification API not available (iOS does not support it)');
+            console.log('ℹ️ All Notification API access will be skipped on iOS');
+            
+            // Create a safe dummy object to prevent "not defined" errors
+            // This prevents any accidental access from causing errors
+            if (typeof window !== 'undefined') {
+                try {
+                    // Don't actually set it, just log that we're skipping it
+                    console.log('ℹ️ Skipping Notification API checks on iOS');
+                } catch (e) {
+                    // Ignore
+                }
+            }
         } else {
             // Only check Notification API on non-iOS devices
             try {
@@ -446,18 +458,20 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // Step 2: Request notification permission (if available)
+                // SKIP ENTIRELY on iOS - don't even try to access Notification
                 console.log('Step 2: Checking notification support...');
                 
-                // Check if Notification API is available - use try-catch for extra safety
-                // Skip Notification API entirely on mobile/iOS - Firebase handles it natively
-                if (!hasNotificationAPI || isMobile || isIOS) {
-                    if (isIOS) {
-                        console.log('ℹ️ iOS detected - Skipping browser Notification API (not supported on iOS)');
-                    } else {
-                        console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
-                    }
+                // iOS completely skips Notification - it doesn't exist and will throw errors
+                if (isIOS) {
+                    console.log('ℹ️ iOS detected - Skipping browser Notification API entirely');
+                    console.log('ℹ️ iOS does not support browser Notification API (this is normal)');
                     console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
-                    // On mobile/iOS, Firebase handles notifications natively, so we can continue
+                    // Continue directly to Firebase - no Notification API needed or checked
+                } else if (!hasNotificationAPI || isMobile) {
+                    // Other mobile devices
+                    console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
+                    console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
+                    // On mobile, Firebase handles notifications natively, so we can continue
                 } else {
                     // Desktop browser - try to request permission
                     try {
