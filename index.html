@@ -205,23 +205,35 @@
         const hasServiceWorkerSupport = 'serviceWorker' in navigator;
         
         // Safely check for Notification API without throwing errors
-        // iOS has limited Notification API support, especially in Chrome
+        // iOS has NO Notification API support - skip all checks
         let hasNotificationAPI = false;
         let NotificationAPI = null;
-        try {
-            // iOS Safari/Chrome has very limited Notification API support
-            if (isIOS) {
-                // iOS doesn't support Notification API in most browsers
-                hasNotificationAPI = false;
-                NotificationAPI = null;
-                console.log('ℹ️ iOS detected - Notification API not available (expected)');
-            } else if (typeof window !== 'undefined' && 'Notification' in window) {
-                NotificationAPI = window.Notification;
-                hasNotificationAPI = typeof NotificationAPI !== 'undefined' && NotificationAPI !== null;
-            }
-        } catch (e) {
-            console.warn('Could not check Notification API:', e.message);
+        
+        // iOS completely skips Notification API - it doesn't exist
+        if (isIOS) {
             hasNotificationAPI = false;
+            NotificationAPI = null;
+            console.log('ℹ️ iOS detected - Notification API not available (iOS does not support it)');
+        } else {
+            // Only check Notification API on non-iOS devices
+            try {
+                if (typeof window !== 'undefined') {
+                    // Use try-catch even for the 'in' check - some environments throw
+                    try {
+                        if ('Notification' in window) {
+                            NotificationAPI = window.Notification;
+                            hasNotificationAPI = typeof NotificationAPI !== 'undefined' && NotificationAPI !== null && NotificationAPI !== undefined;
+                        }
+                    } catch (e) {
+                        // Even checking 'in' can throw on some browsers
+                        console.warn('Could not check Notification API (in check):', e.message);
+                        hasNotificationAPI = false;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not check Notification API:', e.message);
+                hasNotificationAPI = false;
+            }
         }
         
         console.log('📱 Device info:', {
@@ -553,9 +565,19 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 }
                 
                 // If it's a Notification error on mobile/iOS, make it non-fatal
-                if ((isMobile || isIOS) && (errorMessage.includes('Notification') || errorMessage.includes('notification'))) {
+                // Also catch "Cannot find variable" errors which happen on iOS
+                const isNotificationError = (isMobile || isIOS) && (
+                    errorMessage.includes('Notification') || 
+                    errorMessage.includes('notification') ||
+                    errorMessage.includes('Cannot find variable') ||
+                    errorMessage.includes('is not defined') ||
+                    errorMessage.toLowerCase().includes('notification')
+                );
+                
+                if (isNotificationError) {
                     if (isIOS) {
                         console.log('ℹ️ Notification error on iOS - this is expected and non-fatal');
+                        console.log('ℹ️ iOS does not support browser Notification API');
                     } else {
                         console.log('ℹ️ Notification error on mobile - this is expected and non-fatal');
                     }
@@ -563,16 +585,22 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                     
                     // Try to continue anyway - Firebase doesn't need Notification API
                     try {
+                        // Check if service worker is registered
+                        if (!serviceWorkerRegistration) {
+                            console.log('⚠️ Service worker not registered, attempting to register...');
+                            await registerServiceWorker();
+                        }
+                        
+                        if (!serviceWorkerRegistration) {
+                            throw new Error('Service worker registration failed - required for Firebase');
+                        }
+                        
                         // Skip to Firebase initialization
-                        console.log('Attempting to continue with Firebase only...');
+                        console.log('Attempting to continue with Firebase only (iOS/mobile mode)...');
                         
                         // Step 3: Initialize Firebase Messaging
                         console.log('Step 3: Initializing Firebase Messaging...');
                         messagingInstance = firebase.messaging();
-                        
-                        if (!serviceWorkerRegistration) {
-                            throw new Error('Service worker registration lost');
-                        }
                         
                         // Step 4: Get FCM token
                         console.log('Step 4: Getting FCM token...');
@@ -609,14 +637,20 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                         setupMessageHandlers();
                         setupTokenRefresh();
                         
-                        statusEl.textContent = '✅ Ready - Waiting for patient calls... (Mobile mode)';
+                        const modeText = isIOS ? 'iOS mode' : 'Mobile mode';
+                        statusEl.textContent = `✅ Ready - Waiting for patient calls... (${modeText})`;
                         statusEl.className = 'active';
                         refreshBtn.style.display = 'none';
-                        console.log('✅ Successfully registered with backend (mobile mode)');
+                        console.log(`✅ Successfully registered with backend (${modeText})`);
                         return; // Success - exit error handler
                     } catch (retryError) {
                         // If retry also fails, show error
-                        errorMessage = 'Mobile: Notification API not available, but Firebase setup also failed: ' + retryError.message;
+                        console.error('❌ Retry failed:', retryError);
+                        if (isIOS) {
+                            errorMessage = 'iOS: Notification API not available (expected), but Firebase setup failed: ' + retryError.message;
+                        } else {
+                            errorMessage = 'Mobile: Notification API not available, but Firebase setup also failed: ' + retryError.message;
+                        }
                     }
                 }
                 
@@ -687,8 +721,8 @@ ${paths.map(p => `  - ${p}`).join('\n')}
                 audio.play().catch((err) => console.warn('Audio play failed:', err));
                 
                 // Show browser notification (if Notification API is available and on desktop)
-                // On mobile, Firebase handles notifications natively, so skip browser notifications
-                if (hasNotificationAPI && !isMobile && NotificationAPI) {
+                // On mobile/iOS, Firebase handles notifications natively, so skip browser notifications
+                if (hasNotificationAPI && !isMobile && !isIOS && NotificationAPI) {
                     try {
                         // Check permission safely
                         const permission = typeof NotificationAPI.permission !== 'undefined' 
