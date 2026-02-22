@@ -558,8 +558,18 @@ async function signIn() {
 
     _sw = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
 
-    if ('Notification' in window && !/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      await Notification.requestPermission();
+    // iOS does not have the Notification API at all - must NEVER reference it
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!isIOS) {
+      try {
+        // Safe check: only access Notification if we confirmed it exists
+        const NotifAPI = window['Notification'];
+        if (NotifAPI && typeof NotifAPI.requestPermission === 'function') {
+          await NotifAPI.requestPermission();
+        }
+      } catch(e) {
+        console.log('Notification permission skipped:', e.message);
+      }
     }
 
     const fcmToken = await _msg.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: _sw });
@@ -741,6 +751,9 @@ window.signOut = signOut;
 /* ════════════════════════════════════════════════════════
    SHOW INCOMING CALL CARD
 ════════════════════════════════════════════════════════ */
+// Store call objects by cardId so onclick doesn't need inline JSON
+const _callStore = {};
+
 function showCall(call) {
   const box = document.getElementById('callsBox');
   box.querySelectorAll('.empty').forEach(e => e.remove());
@@ -749,6 +762,7 @@ function showCall(call) {
   card.className = 'call-card';
   const cardId = 'c' + Date.now();
   card.id = cardId;
+  _callStore[cardId] = call;   // store call data safely
 
   // Parse vitals from symptom string
   let symptoms = call.symptom;
@@ -779,7 +793,7 @@ function showCall(call) {
     ${vitalsHtml}
     <div class="call-btns">
       ${call.video_call_url
-        ? `<button class="btn-accept" onclick="acceptCall(${JSON.stringify(JSON.stringify(call))}, '${cardId}')">✅ Accept Call</button>`
+        ? `<button class="btn-accept" onclick="acceptCall('${cardId}')">✅ Accept Call</button>`
         : '<span style="font-family:monospace;font-size:.7rem;color:var(--dim);">No video URL</span>'}
       <button class="btn-reject" onclick="rejectCall('${cardId}')">❌ Reject</button>
     </div>
@@ -799,15 +813,21 @@ function showCall(call) {
   setTimeout(() => { card.remove(); _checkEmpty(); }, 300_000);
 }
 
-function rejectCall(id) { document.getElementById(id)?.remove(); _checkEmpty(); }
+function rejectCall(id) {
+  delete _callStore[id];
+  document.getElementById(id)?.remove();
+  _checkEmpty();
+}
 function _checkEmpty() {
   const b = document.getElementById('callsBox');
   if (!b.children.length)
     b.innerHTML = '<div class="empty"><div class="empty-icon">🚑</div>Waiting for incoming calls…</div>';
 }
 
-function acceptCall(callJson, cardId) {
-  const call = JSON.parse(callJson);
+function acceptCall(cardId) {
+  const call = _callStore[cardId];
+  if (!call) { console.error('Call not found for', cardId); return; }
+  delete _callStore[cardId];
   document.getElementById(cardId)?.remove();
   _checkEmpty();
   startVideo(call.video_call_url, call);
