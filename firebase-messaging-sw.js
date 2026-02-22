@@ -38,11 +38,18 @@ self.addEventListener('notificationclick', (event) => {
             for (const client of list) {
                 if (new URL(client.url).origin === new URL(appUrl).origin && 'focus' in client) {
                     client.focus();
-                    if (videoUrl) client.postMessage({ type: 'START_VIDEO_CALL', videoUrl });
+                    // Send full call data so the card shows name/symptoms
+                    client.postMessage({ type: 'INCOMING_CALL', call: notificationData });
                     return;
                 }
             }
-            const url = videoUrl ? `${appUrl}?video=${encodeURIComponent(videoUrl)}` : appUrl;
+            // App closed — open with all params in URL
+            const params = new URLSearchParams();
+            if (videoUrl)                         params.set('video',   videoUrl);
+            if (notificationData.patient_name)    params.set('name',    notificationData.patient_name);
+            if (notificationData.patient_id)      params.set('id',      notificationData.patient_id);
+            if (notificationData.symptom)         params.set('symptom', notificationData.symptom);
+            const url = appUrl + (params.toString() ? '?' + params.toString() : '');
             return clients.openWindow(url);
         })
     );
