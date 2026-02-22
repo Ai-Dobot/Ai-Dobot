@@ -839,7 +839,8 @@ function acceptCall(cardId) {
 /* ════════════════════════════════════════════════════════
    JITSI VIDEO CALL
 ════════════════════════════════════════════════════════ */
-let _activeCallId = null;   // current Jitsi room ID for end-call sync
+let _activeCallId    = null;
+let _endCallPollTimer = null;   // polls for patient-ended calls
 
 function startVideo(url, call) {
   let room = url;
@@ -858,7 +859,9 @@ function startVideo(url, call) {
   document.getElementById('viTemp').textContent     = v.temp   ? v.temp + ' °C'  : '--';
   document.getElementById('viWeight').textContent   = v.weight ? v.weight + ' kg': '--';
 
-  document.getElementById('videoOverlay').classList.add('active');
+  const ov = document.getElementById('videoOverlay');
+  ov.style.display = '';           // clear any display:none from previous endCall
+  ov.classList.add('active');
   document.body.style.overflow = 'hidden';
 
   if (_jitsi) { try { _jitsi.dispose(); } catch(e) {} _jitsi = null; }
@@ -882,21 +885,37 @@ function startVideo(url, call) {
       userInfo: { displayName: _doctorProfile?.name || 'Doctor' },
     });
     _jitsi.addEventListener('readyToClose', endCall);
+
+    // Poll so if PATIENT ends the call, doctor side also closes
+    if (_endCallPollTimer) clearInterval(_endCallPollTimer);
+    _endCallPollTimer = setInterval(async () => {
+      if (!_activeCallId) return;
+      try {
+        const r = await fetch(`${BACKEND}/api/calls/ended/${encodeURIComponent(_activeCallId)}`);
+        const d = await r.json();
+        if (d.ended) { endCall(); }
+      } catch(e) {}
+    }, 2000);
   } catch(e) { alert('Video call error: ' + e.message); endCall(); }
 }
 
-function endCall() {
-  // Prevent double-firing
-  if (!_activeCallId && !_jitsi) return;
+let _callEnding = false;
 
-  // Signal backend — patient side detects this within 4s and also closes
+function endCall() {
+  if (_callEnding) return;
+  _callEnding = true;
+
+  // Stop the end-call detector poll
+  if (_endCallPollTimer) { clearInterval(_endCallPollTimer); _endCallPollTimer = null; }
+
+  // Signal backend so patient side also closes
   if (_activeCallId) {
     fetch(`${BACKEND}/api/calls/end/${encodeURIComponent(_activeCallId)}`, { method: 'POST' })
       .catch(() => {});
     _activeCallId = null;
   }
 
-  // Kill Jitsi completely
+  // Kill Jitsi
   if (_jitsi) {
     try { _jitsi.executeCommand('hangup'); } catch(e) {}
     try { _jitsi.dispose(); } catch(e) {}
@@ -906,9 +925,14 @@ function endCall() {
   // Wipe video container
   document.getElementById('jitsiFrame').innerHTML = '';
 
-  // Close overlay — return to dashboard
-  document.getElementById('videoOverlay').classList.remove('active');
+  // CLOSE the full-screen overlay completely
+  const overlay = document.getElementById('videoOverlay');
+  overlay.classList.remove('active');
+  overlay.style.display = 'none';
   document.body.style.overflow = '';
+
+  // Reset after delay so new calls work
+  setTimeout(() => { _callEnding = false; }, 3000);
 }
 window.endCall = endCall;
 
