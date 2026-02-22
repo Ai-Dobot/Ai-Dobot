@@ -610,6 +610,7 @@ function showDashboard() {
 
   connectFirebase();
   startHeartbeat();
+  startPolling();
 
   // Handle URL param (notification tap when app was closed)
   const p = new URLSearchParams(window.location.search);
@@ -677,10 +678,48 @@ function startHeartbeat() {
 }
 
 /* ════════════════════════════════════════════════════════
+   POLLING — catches calls FCM missed (background tab)
+   Polls /api/calls/pending/:doctor_id every 5 seconds.
+   When a pending call is found, shows the card and
+   acknowledges (DELETEs) it so it does not show twice.
+════════════════════════════════════════════════════════ */
+let _pollTimer      = null;
+let _shownCallIds   = new Set();   // avoid duplicate cards
+
+function startPolling() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(_pollPending, 5000);
+}
+
+async function _pollPending() {
+  if (!_doctorId) return;
+  try {
+    const r = await fetch(`${BACKEND}/api/calls/pending/${_doctorId}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    for (const call of (data.calls || [])) {
+      if (_shownCallIds.has(call.call_id)) continue;
+      _shownCallIds.add(call.call_id);
+      // Acknowledge immediately so we do not show it again on next poll
+      fetch(`${BACKEND}/api/calls/pending/${call.call_id}`, { method: 'DELETE' }).catch(() => {});
+      showCall({
+        patient_name:   call.patient_name,
+        patient_id:     call.patient_id,
+        symptom:        call.symptom,
+        video_call_url: call.video_call_url,
+        timestamp:      new Date(call.created_at * 1000).toISOString(),
+      });
+    }
+  } catch(e) { /* silent — network blip */ }
+}
+
+/* ════════════════════════════════════════════════════════
    SIGN OUT
 ════════════════════════════════════════════════════════ */
 async function signOut() {
   clearInterval(_heartbeatTimer);
+  clearInterval(_pollTimer);
+  _shownCallIds.clear();
   if (_doctorId) {
     try {
       await fetch(`${BACKEND}/api/doctor/signout`, {
