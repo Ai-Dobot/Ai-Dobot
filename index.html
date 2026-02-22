@@ -886,14 +886,27 @@ function startVideo(url, call) {
 }
 
 function endCall() {
-  // Notify backend so patient side also gets hung up
+  // Prevent double-firing
+  if (!_activeCallId && !_jitsi) return;
+
+  // Signal backend — patient side detects this within 4s and also closes
   if (_activeCallId) {
     fetch(`${BACKEND}/api/calls/end/${encodeURIComponent(_activeCallId)}`, { method: 'POST' })
       .catch(() => {});
     _activeCallId = null;
   }
-  if (_jitsi) { try { _jitsi.executeCommand('hangup'); _jitsi.dispose(); } catch(e) {} _jitsi = null; }
+
+  // Kill Jitsi completely
+  if (_jitsi) {
+    try { _jitsi.executeCommand('hangup'); } catch(e) {}
+    try { _jitsi.dispose(); } catch(e) {}
+    _jitsi = null;
+  }
+
+  // Wipe video container
   document.getElementById('jitsiFrame').innerHTML = '';
+
+  // Close overlay — return to dashboard
   document.getElementById('videoOverlay').classList.remove('active');
   document.body.style.overflow = '';
 }
