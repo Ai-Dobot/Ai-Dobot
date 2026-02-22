@@ -1,1343 +1,584 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Doctor Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Firebase SDK (compat version) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .info-box {
-            background: #e7f3ff;
-            border-left: 4px solid #2196F3;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .info-box strong { color: #1976D2; }
-        #status {
-            text-align: center;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-        #status.active { background: #d4edda; color: #155724; }
-        #status.error { background: #f8d7da; color: #721c24; }
-        
-        .call-box {
-            background: #fff3cd;
-            border-left: 5px solid #ffc107;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 8px;
-            animation: slideIn 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .call-box h3 {
-            color: #856404;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        .call-info {
-            margin: 10px 0;
-            color: #333;
-            font-size: 15px;
-        }
-        .call-info strong {
-            display: inline-block;
-            width: 130px;
-            color: #555;
-        }
-        .video-call-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 100%;
-        }
-        .video-call-btn:hover {
-            background-color: #218838;
-        }
-        .video-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #1a1a1a;
-            z-index: 10000;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .video-container.active {
-            display: flex;
-        }
-        .video-top-section {
-            width: 100%;
-            height: 50vh;
-            min-height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-            padding: 20px;
-            position: relative;
-        }
-        #jitsiContainer {
-            width: 100%;
-            height: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-        /* Make video circular/rounded at top */
-        #jitsiContainer iframe {
-            border-radius: 20px;
-        }
-        .patient-info-section {
-            flex: 1;
-            background: #f5f5f5;
-            overflow-y: auto;
-            padding: 30px;
-            max-height: 50vh;
-        }
-        .patient-info-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .patient-info-card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 24px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-        .patient-info-item {
-            margin: 15px 0;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        .patient-info-item strong {
-            color: #333;
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .patient-info-item .value {
-            color: #555;
-            font-size: 16px;
-            margin-top: 5px;
-        }
-        .symptoms-box {
-            background: #fff3cd;
-            border-left: 5px solid #ffc107;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        .symptoms-box strong {
-            color: #856404;
-            display: block;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .symptoms-box .symptom-text {
-            color: #333;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-        .video-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .end-call-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 10001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            transition: all 0.3s;
-        }
-        .end-call-btn:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-        /* Scrollbar styling for patient info section */
-        .patient-info-section::-webkit-scrollbar {
-            width: 8px;
-        }
-        .patient-info-section::-webkit-scrollbar-track {
-            background: #e0e0e0;
-            border-radius: 10px;
-        }
-        .patient-info-section::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-        .patient-info-section::-webkit-scrollbar-thumb:hover {
-            background: #5568d3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Dashboard — AI Dobot</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+  <!-- Jitsi Meet External API -->
+  <script src="https://8x8.vc/external_api.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0a0e1a;
+      --surface: #0f1525;
+      --border:  rgba(0,200,255,.15);
+      --cyan:    #00e5ff;
+      --green:   #00e676;
+      --amber:   #ffb300;
+      --red:     #ff4444;
+      --dim:     rgba(255,255,255,.35);
+      --fg:      rgba(255,255,255,.87);
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+
+    /* ── Header ──────────────────────────────────── */
+    .header {
+      background: rgba(0,229,255,.04);
+      border-bottom: 1px solid var(--border);
+      padding: .9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      letter-spacing: .2em;
+      color: var(--cyan);
+      font-weight: 700;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      font-family: monospace;
+      font-size: .72rem;
+      letter-spacing: .12em;
+      padding: .3rem .85rem;
+      border-radius: 20px;
+    }
+    .status-pill.ready  { background: rgba(0,230,118,.1);  border: 1px solid rgba(0,230,118,.35); color: var(--green); }
+    .status-pill.init   { background: rgba(180,100,255,.1);border: 1px solid rgba(180,100,255,.35);color: #c084ff; }
+    .status-pill.error  { background: rgba(255,68,68,.1);  border: 1px solid rgba(255,68,68,.35); color: var(--red); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status-dot.pulse { animation: dot-pulse 1.2s ease-in-out infinite; }
+    @keyframes dot-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Main layout ─────────────────────────────── */
+    .main {
+      max-width: 860px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+
+    /* ── Info box ────────────────────────────────── */
+    .info-box {
+      background: rgba(0,150,255,.07);
+      border: 1px solid rgba(0,150,255,.25);
+      border-left: 4px solid var(--cyan);
+      border-radius: 8px;
+      padding: .9rem 1.1rem;
+      font-size: .78rem;
+      line-height: 1.7;
+      color: rgba(255,255,255,.65);
+      margin-bottom: 1.2rem;
+    }
+    .info-box strong { color: var(--cyan); }
+
+    /* ── Cards ───────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-family: monospace;
+      font-size: .65rem;
+      letter-spacing: .22em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: .9rem;
+    }
+
+    /* ── Incoming call card ───────────────────────── */
+    .call-card {
+      background: rgba(255,179,0,.05);
+      border: 1px solid rgba(255,179,0,.3);
+      border-left: 5px solid var(--amber);
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+      margin-bottom: .75rem;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from{transform:translateX(-16px);opacity:0} to{transform:none;opacity:1} }
+    .call-card-title {
+      color: var(--amber);
+      font-family: monospace;
+      font-size: .85rem;
+      font-weight: 700;
+      margin-bottom: .7rem;
+    }
+    .call-row {
+      display: flex;
+      gap: .5rem;
+      font-size: .78rem;
+      margin-bottom: .35rem;
+    }
+    .call-row .lbl { color: var(--dim); min-width: 110px; font-family: monospace; }
+    .call-row .val { color: var(--fg); }
+    .call-btn-row { display: flex; gap: .65rem; margin-top: .9rem; flex-wrap: wrap; }
+
+    .btn-accept {
+      background: rgba(0,200,80,.15);
+      border: 1px solid rgba(0,200,80,.45);
+      color: var(--green);
+      font-family: monospace; font-size: .75rem; letter-spacing: .1em;
+      padding: .55rem 1.3rem; border-radius: 7px; cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-accept:hover { background: rgba(0,200,80,.3); }
+    .btn-reject {
+      background: rgba(255,60,60,.12);
+      border: 1px solid rgba(255,60,60,.4);
+      color: var(--red);
+      font-family: monospace; font-size: .75rem; letter-spacing: .1em;
+      padding: .55rem 1.3rem; border-radius: 7px; cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-reject:hover { background: rgba(255,60,60,.28); }
+
+    /* ── Empty state ─────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--dim);
+      font-family: monospace;
+      font-size: .78rem;
+      letter-spacing: .1em;
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: .6rem; opacity: .3; }
+
+    /* ── Retry button ────────────────────────────── */
+    .btn-retry {
+      display: block;
+      margin: .8rem auto 0;
+      background: rgba(0,229,255,.1);
+      border: 1px solid rgba(0,229,255,.3);
+      color: var(--cyan);
+      font-family: monospace; font-size: .72rem; letter-spacing: .12em;
+      padding: .45rem 1.2rem; border-radius: 6px; cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-retry:hover { background: rgba(0,229,255,.2); }
+
+    /* ── FULL SCREEN VIDEO OVERLAY ───────────────── */
+    .video-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #060a10;
+      flex-direction: column;
+    }
+    .video-overlay.active { display: flex; }
+
+    .video-top {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: #000;
+    }
+    #jitsiFrame { width: 100%; height: 100%; }
+
+    .vid-end-btn {
+      position: absolute;
+      bottom: 1.2rem; right: 1.2rem;
+      background: rgba(220,30,30,.92);
+      border: none; color: #fff;
+      font-family: monospace; font-size: .75rem; letter-spacing: .12em;
+      padding: .6rem 1.4rem; border-radius: 30px;
+      cursor: pointer; z-index: 10;
+      box-shadow: 0 4px 20px rgba(255,40,40,.4);
+      transition: background .2s, transform .15s;
+    }
+    .vid-end-btn:hover { background: red; transform: scale(1.05); }
+
+    /* Patient info strip (bottom of video) */
+    .video-info {
+      background: #090d18;
+      border-top: 1px solid var(--border);
+      padding: .9rem 1.4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    @media(max-width:600px){ .video-info{ grid-template-columns:1fr; } }
+    .vi-title { font-family: monospace; font-size: .58rem; letter-spacing: .2em; color: var(--cyan); margin-bottom: .5rem; }
+    .vi-row { display: flex; gap: .5rem; margin-bottom: .3rem; font-size: .72rem; }
+    .vi-row .vl { color: var(--dim); min-width: 80px; font-family: monospace; }
+    .vi-row .vv { color: var(--fg); }
+    .vi-symptoms {
+      background: rgba(255,179,0,.06);
+      border-left: 3px solid var(--amber);
+      border-radius: 4px;
+      padding: .4rem .6rem;
+      font-size: .72rem;
+      line-height: 1.6;
+      color: rgba(255,180,0,.9);
+      margin-top: .3rem;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>👨‍⚕️ Doctor Dashboard</h1>
-        
-        <div class="info-box">
-            <strong>📡 How it works:</strong><br>
-            1. Patient uses robot (Qt app) to call<br>
-            2. Robot sends request to backend (Render)<br>
-            3. Backend sends notification here via Firebase<br>
-            4. You receive patient details instantly!<br>
-            <br>
-            <strong>📱 Mobile Note:</strong> On mobile devices, notifications work through Firebase Cloud Messaging (native push notifications). Browser notification permission is not required.
-        </div>
-        
-        <div id="status">Initializing...</div>
-        <button id="refreshBtn" onclick="init()" style="display: none; padding: 10px 20px; margin: 10px auto; display: block; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">🔄 Retry Connection</button>
-        <div id="callsContainer"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">&#128657; AI DOBOT — DOCTOR DASHBOARD</div>
+  <div class="status-pill init" id="statusPill">
+    <span class="status-dot pulse"></span>
+    <span id="statusTxt">Initializing…</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="info-box">
+    <strong>How it works:</strong><br>
+    1. Patient uses the robot to call you<br>
+    2. Robot sends request to the backend (Render)<br>
+    3. Backend sends a Firebase notification here<br>
+    4. Accept the call → Jitsi video opens instantly
+  </div>
+
+  <!-- Incoming calls container -->
+  <div class="card">
+    <div class="card-title">&#128222; Incoming Patient Calls</div>
+    <div id="callsBox">
+      <div class="empty-state">
+        <div class="empty-icon">&#128657;</div>
+        Waiting for incoming calls…
+      </div>
     </div>
-    
-    <div id="videoContainer" class="video-container">
-        <div class="video-top-section">
-            <div id="jitsiContainer" style="width: 100%; height: 100%;"></div>
-        </div>
-        <div class="patient-info-section" id="patientInfoSection">
-            <!-- Patient information will be displayed here -->
-        </div>
-        <button id="endCallBtn" class="end-call-btn" onclick="endVideoCall()">🔴 End Call</button>
+  </div>
+
+  <button class="btn-retry" id="retryBtn" onclick="init()" style="display:none;">&#8635; Retry Connection</button>
+
+</div>
+
+<!-- FULL-SCREEN VIDEO OVERLAY -->
+<div class="video-overlay" id="videoOverlay">
+  <div class="video-top">
+    <div id="jitsiFrame"></div>
+    <button class="vid-end-btn" onclick="endVideoCall()">&#128308; End Call</button>
+  </div>
+  <div class="video-info">
+    <div>
+      <div class="vi-title">&#128100; Patient Info</div>
+      <div class="vi-row"><span class="vl">Name</span><span class="vv" id="viName">--</span></div>
+      <div class="vi-row"><span class="vl">Patient ID</span><span class="vv" id="viId">--</span></div>
+      <div class="vi-row"><span class="vl">Call time</span><span class="vv" id="viTime">--</span></div>
+      <div class="vi-symptoms" id="viSymptoms"></div>
     </div>
-    
-    <!-- Jitsi Meet External API -->
-    <script src="https://8x8.vc/external_api.js"></script>
+    <div>
+      <div class="vi-title">&#128202; Vitals (from report)</div>
+      <div class="vi-row"><span class="vl">Heart Rate</span><span class="vv" id="viHr">--</span></div>
+      <div class="vi-row"><span class="vl">SpO₂</span><span class="vv" id="viSpo2">--</span></div>
+      <div class="vi-row"><span class="vl">Temperature</span><span class="vv" id="viTemp">--</span></div>
+      <div class="vi-row"><span class="vl">Weight</span><span class="vv" id="viWeight">--</span></div>
+    </div>
+  </div>
+</div>
 
-    <script>
-        // =============================================
-        // 🔥 FIREBASE CONFIG (YOUR PROJECT)
-        // =============================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyD1ih39qUdc429FJL6lu-_U1SiVVIU1GbI",
-            authDomain: "ai-dobot.firebaseapp.com",
-            projectId: "ai-dobot",
-            storageBucket: "ai-dobot.firebasestorage.app",
-            messagingSenderId: "110620790793",
-            appId: "1:110620790793:web:6c0034d575a5016b6ea8d8"
-        };
+<script>
+'use strict';
 
-        // Initialize Firebase App (but not messaging yet)
-        firebase.initializeApp(firebaseConfig);
+/* ════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyD1ih39qUdc429FJL6lu-_U1SiVVIU1GbI",
+  authDomain:        "ai-dobot.firebaseapp.com",
+  projectId:         "ai-dobot",
+  storageBucket:     "ai-dobot.firebasestorage.app",
+  messagingSenderId: "110620790793",
+  appId:             "1:110620790793:web:6c0034d575a5016b6ea8d8",
+};
+const VAPID_KEY   = "BDKuFdPP4BzpwVOs059zbUqZ0HV-shQLxP3DpTPNYN6tJmtxaiq89ChvZgWTWbO466g3z3AdsshexItx7uibJ0Q";
+const BACKEND_URL = "https://backend-jzw7.onrender.com";
 
-        // VAPID key from Firebase Console
-        const VAPID_KEY = "BDKuFdPP4BzpwVOs059zbUqZ0HV-shQLxP3DpTPNYN6tJmtxaiq89ChvZgWTWbO466g3z3AdsshexItx7uibJ0Q";
-        
-        // CHANGE THIS to your Render backend URL
-        const BACKEND_URL = "https://backend-jzw7.onrender.com";  // Change to https://your-app.onrender.com
-        
-        const statusEl = document.getElementById("status");
-        const callsContainer = document.getElementById("callsContainer");
-        const refreshBtn = document.getElementById("refreshBtn");
-        
-        // Store service worker registration and messaging instance globally
-        let serviceWorkerRegistration = null;
-        let messagingInstance = null;
-        let jitsiApi = null; // Jitsi Meet API instance
-        let currentCallData = null; // Store current call data for patient info display
-        
-        // Detect if running on mobile or in WebView/APK
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const isAndroid = /Android/i.test(navigator.userAgent);
-        const isWebView = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-        
-        // Detect if running in APK/WebView wrapper (not PWA)
-        // APKs often have specific user agent patterns or lack certain features
-        const isAPK = (() => {
-            const ua = navigator.userAgent.toLowerCase();
-            // Common APK WebView indicators
-            return ua.includes('wv') || // Android WebView
-                   (isMobile && !('serviceWorker' in navigator)) || // Mobile without service workers
-                   (isMobile && window.navigator.userAgent.includes('Version/') && !window.navigator.standalone); // iOS WebView
-        })();
-        
-        // Check service worker support
-        const hasServiceWorkerSupport = 'serviceWorker' in navigator;
-        
-        // Safely check for Notification API without throwing errors
-        // iOS has NO Notification API support - skip all checks
-        let hasNotificationAPI = false;
-        let NotificationAPI = null;
-        
-        // iOS completely skips Notification API - it doesn't exist and will cause errors
-        if (isIOS) {
-            hasNotificationAPI = false;
-            NotificationAPI = null;
-            console.log('ℹ️ iOS detected - Notification API not available (iOS does not support it)');
-            console.log('ℹ️ All Notification API access will be skipped on iOS');
-            
-            // Create a safe dummy object to prevent "not defined" errors
-            // This prevents any accidental access from causing errors
-            if (typeof window !== 'undefined') {
-                try {
-                    // Don't actually set it, just log that we're skipping it
-                    console.log('ℹ️ Skipping Notification API checks on iOS');
-                } catch (e) {
-                    // Ignore
-                }
-            }
-        } else {
-            // Only check Notification API on non-iOS devices
-            try {
-                if (typeof window !== 'undefined') {
-                    // Use try-catch even for the 'in' check - some environments throw
-                    try {
-                        if ('Notification' in window) {
-                            NotificationAPI = window.Notification;
-                            hasNotificationAPI = typeof NotificationAPI !== 'undefined' && NotificationAPI !== null && NotificationAPI !== undefined;
-                        }
-                    } catch (e) {
-                        // Even checking 'in' can throw on some browsers
-                        console.warn('Could not check Notification API (in check):', e.message);
-                        hasNotificationAPI = false;
-                    }
-                }
-            } catch (e) {
-                console.warn('Could not check Notification API:', e.message);
-                hasNotificationAPI = false;
-            }
-        }
-        
-        console.log('📱 Device info:', {
-            isMobile,
-            isIOS,
-            isAndroid,
-            isWebView,
-            isAPK,
-            hasNotificationAPI,
-            hasServiceWorkerSupport,
-            userAgent: navigator.userAgent.substring(0, 80)
+/* globals */
+let _sw   = null;   // service worker registration
+let _msg  = null;   // firebase messaging instance
+let _jitsi= null;   // current Jitsi API instance
+
+/* ════════════════════════════════════════════════════
+   STATUS UI
+════════════════════════════════════════════════════ */
+function setStatus(text, cls) {
+  const pill = document.getElementById('statusPill');
+  const dot  = pill.querySelector('.status-dot');
+  const span = document.getElementById('statusTxt');
+  pill.className   = 'status-pill ' + (cls || 'init');
+  dot.className    = 'status-dot' + (cls === 'ready' ? ' pulse' : '');
+  span.textContent = text;
+}
+
+/* ════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════ */
+async function init() {
+  document.getElementById('retryBtn').style.display = 'none';
+  setStatus('Registering service worker…', 'init');
+
+  try {
+    /* 1 — Service Worker */
+    if (!('serviceWorker' in navigator))
+      throw new Error('Service Workers not supported in this browser.');
+
+    _sw = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    console.log('✅ SW registered');
+
+    /* 2 — Notification permission (desktop only) */
+    if ('Notification' in window && !navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+      const perm = await Notification.requestPermission();
+      console.log('Notification permission:', perm);
+    }
+
+    /* 3 — Firebase messaging */
+    setStatus('Connecting to Firebase…', 'init');
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _msg = firebase.messaging();
+
+    /* 4 — FCM token */
+    setStatus('Getting FCM token…', 'init');
+    const token = await _msg.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: _sw });
+    if (!token) throw new Error('Failed to get FCM token.');
+    console.log('FCM token:', token.slice(0,20) + '…');
+
+    /* 5 — Register token with backend */
+    setStatus('Registering with backend…', 'init');
+    const r = await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (!r.ok) throw new Error(`Backend error ${r.status}`);
+    console.log('✅ Registered with backend');
+
+    /* 6 — Foreground message handler */
+    _msg.onMessage((payload) => {
+      console.log('📨 Foreground message:', payload);
+      const data = payload.data || {};
+      const call = {
+        patient_name:  data.patient_name  || 'Unknown',
+        patient_id:    data.patient_id    || 'N/A',
+        symptom:       data.symptom       || payload.notification?.body || '--',
+        video_call_url:data.video_call_url|| null,
+        timestamp:     new Date().toISOString(),
+      };
+      showCall(call);
+      // If app is focused, auto-show the call card; doctor still has to click Accept
+    });
+
+    /* 7 — SW message relay (notification click when app open) */
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data?.type === 'START_VIDEO_CALL' && e.data.videoUrl) {
+        startVideo(e.data.videoUrl, {});
+      }
+    });
+
+    /* 8 — Check URL param (notification click when app was closed) */
+    const params = new URLSearchParams(window.location.search);
+    const vUrl   = params.get('video');
+    if (vUrl) {
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => startVideo(decodeURIComponent(vUrl), {}), 500);
+    }
+
+    /* 9 — Token refresh */
+    setInterval(async () => {
+      try {
+        const t = await _msg.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: _sw });
+        if (t) await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ token: t }),
         });
-        
-        // iOS-specific info
-        if (isIOS) {
-            console.log('ℹ️ iOS device detected');
-            console.log('ℹ️ Notification API not available on iOS (expected)');
-            console.log('ℹ️ Firebase Cloud Messaging will handle notifications natively');
-        }
-        
-        // Warn if APK detected without service worker support
-        if (isAPK && !hasServiceWorkerSupport) {
-            console.warn('⚠️ APK/WebView detected without service worker support');
-            console.warn('⚠️ Firebase Cloud Messaging requires service workers');
-            console.warn('💡 Consider using the website version or PWA instead of APK');
-        }
+      } catch(e) { console.warn('Token refresh failed:', e.message); }
+    }, 600_000); // every 10 min
 
-        // =============================================
-        // 🔍 CHECK IF SERVICE WORKER FILE EXISTS
-        // =============================================
-        async function checkServiceWorkerFile(path) {
-            try {
-                const response = await fetch(path, { method: 'HEAD' });
-                return response.ok;
-            } catch {
-                return false;
-            }
-        }
+    setStatus('Ready — Waiting for calls', 'ready');
 
-        // =============================================
-        // 🔧 REGISTER SERVICE WORKER
-        // =============================================
-        async function registerServiceWorker() {
-            if (!hasServiceWorkerSupport) {
-                if (isAPK) {
-                    throw new Error('Service Workers are not supported in this APK/WebView. Firebase Cloud Messaging requires service workers. Please use the website version (PWA) instead of APK, or ensure your APK WebView supports service workers.');
-                } else {
-                    throw new Error('Service Workers are not supported in this browser');
-                }
-            }
-            
-            try {
-                // Calculate base path - ensure it ends with /
-                let basePath = window.location.pathname.replace(/\/[^/]*$/, '') || '/';
-                if (!basePath.endsWith('/')) {
-                    basePath += '/';
-                }
-                
-                const paths = [
-                    basePath + 'firebase-messaging-sw.js',
-                    '/firebase-messaging-sw.js',
-                    './firebase-messaging-sw.js',
-                    'firebase-messaging-sw.js',
-                    window.location.origin + basePath + 'firebase-messaging-sw.js',
-                    window.location.origin + '/firebase-messaging-sw.js'
-                ];
-                
-                // First, check which file actually exists
-                console.log('🔍 Checking for service worker file...');
-                let validPath = null;
-                for (const path of paths) {
-                    const exists = await checkServiceWorkerFile(path);
-                    if (exists) {
-                        validPath = path;
-                        console.log(`✅ Found service worker at: ${path}`);
-                        break;
-                    }
-                }
-                
-                if (!validPath) {
-                    // Try to register anyway (might work if file exists but HEAD request failed)
-                    console.log('⚠️ Could not verify file exists, trying to register anyway...');
-                    validPath = paths[0]; // Try first path
-                }
-                
-                // Now try to register with correct scope
-                let registration = null;
-                let lastError = null;
-                
-                for (const path of paths) {
-                    try {
-                        console.log(`📝 Attempting to register service worker at: ${path}`);
-                        
-                        // Calculate scope based on the service worker file location
-                        // If path is absolute, extract directory; if relative, use basePath
-                        let scope = basePath;
-                        if (path.startsWith('http')) {
-                            // Absolute URL - extract directory
-                            const url = new URL(path);
-                            const dir = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
-                            scope = dir;
-                        } else if (path.startsWith('/')) {
-                            // Absolute path - extract directory
-                            scope = path.substring(0, path.lastIndexOf('/') + 1);
-                        } else if (path.startsWith('./')) {
-                            // Relative path - use current directory
-                            scope = basePath;
-                        } else {
-                            // Just filename - use current directory
-                            scope = basePath;
-                        }
-                        
-                        // Ensure scope ends with /
-                        if (!scope.endsWith('/')) {
-                            scope += '/';
-                        }
-                        
-                        console.log(`   Using scope: ${scope}`);
-                        
-                        registration = await navigator.serviceWorker.register(path, {
-                            scope: scope
-                        });
-                        console.log('✅ Service Worker registered successfully at:', path);
-                        break;
-                    } catch (err) {
-                        console.warn(`❌ Failed to register at ${path}:`, err.message);
-                        lastError = err;
-                    }
-                }
-                
-                if (!registration) {
-                    const errorMsg = `Service Worker registration failed. 
-                    
-Tried paths:
-${paths.map(p => `  - ${p}`).join('\n')}
+  } catch(err) {
+    console.error('Init failed:', err);
+    setStatus('Setup failed: ' + err.message, 'error');
+    document.getElementById('retryBtn').style.display = 'block';
+  }
+}
 
-💡 Solutions:
-1. Make sure firebase-messaging-sw.js is in the same directory as index.html
-2. If using GitHub Pages, ensure the file is committed and pushed
-3. Check GitHub Pages settings - the file should be accessible at: ${window.location.origin}/firebase-messaging-sw.js
-4. Wait a few minutes after pushing - GitHub Pages can take time to update`;
-                    
-                    console.error(errorMsg);
-                    throw new Error('Service Worker file not found. See console for details.');
-                }
-                
-                serviceWorkerRegistration = registration;
-                return registration;
-            } catch (error) {
-                console.error('❌ Service Worker registration failed:', error);
-                throw error;
-            }
-        }
+/* ════════════════════════════════════════════════════
+   SHOW INCOMING CALL CARD
+════════════════════════════════════════════════════ */
+function showCall(call) {
+  const box = document.getElementById('callsBox');
+  // Remove empty state
+  box.querySelectorAll('.empty-state').forEach(e => e.remove());
 
-        // =============================================
-        // 🔍 TEST BACKEND CONNECTION
-        // =============================================
-        async function testBackendConnection() {
-            try {
-                console.log('Testing backend connection to:', BACKEND_URL);
-                const response = await fetch(`${BACKEND_URL}/`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Backend is reachable:', data);
-                    return true;
-                } else {
-                    console.warn('⚠️ Backend responded with status:', response.status);
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Cannot reach backend:', error);
-                throw new Error(`Cannot connect to backend at ${BACKEND_URL}. Check if it's running and accessible.`);
-            }
-        }
+  const card = document.createElement('div');
+  card.className = 'call-card';
+  card.id = 'call-' + Date.now();
 
-        // =============================================
-        // 🔔 INITIALIZE
-        // =============================================
-        async function init() {
-            try {
-                statusEl.textContent = '🔄 Initializing...';
-                statusEl.className = '';
-                
-                // Step 0: Test backend connection
-                console.log('Step 0: Testing backend connection...');
-                await testBackendConnection();
-                console.log('✅ Backend connection OK');
-                
-                // Step 1: Register Service Worker FIRST (REQUIRED for FCM)
-                // This MUST happen before Firebase Messaging initializes
-                console.log('Step 1: Registering service worker (BEFORE Firebase)...');
-                
-                // Check service worker support first
-                if (!hasServiceWorkerSupport) {
-                    if (isAPK) {
-                        throw new Error('APK/WebView does not support Service Workers. Firebase Cloud Messaging requires service workers. Please:\n1. Use the website version and add to home screen (PWA)\n2. Or use a WebView that supports service workers\n3. Or implement native Firebase SDK in your APK');
-                    } else {
-                        throw new Error('Service Workers are not supported in this browser. Please use a modern browser.');
-                    }
-                }
-                
-                await registerServiceWorker();
-                console.log('✅ Service worker registered and ready');
-                
-                // Small delay to ensure service worker is fully registered
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                // Step 2: Request notification permission (if available)
-                // SKIP ENTIRELY on iOS - don't even try to access Notification
-                console.log('Step 2: Checking notification support...');
-                
-                // iOS completely skips Notification - it doesn't exist and will throw errors
-                if (isIOS) {
-                    console.log('ℹ️ iOS detected - Skipping browser Notification API entirely');
-                    console.log('ℹ️ iOS does not support browser Notification API (this is normal)');
-                    console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
-                    // Continue directly to Firebase - no Notification API needed or checked
-                } else if (!hasNotificationAPI || isMobile) {
-                    // Other mobile devices
-                    console.log('ℹ️ Skipping browser Notification API (mobile device or not available)');
-                    console.log('ℹ️ Using Firebase Cloud Messaging for native push notifications');
-                    // On mobile, Firebase handles notifications natively, so we can continue
-                } else {
-                    // Desktop browser - try to request permission
-                    try {
-                        if (NotificationAPI && typeof NotificationAPI.requestPermission === 'function') {
-                            console.log('Requesting notification permission...');
-                            const permission = await NotificationAPI.requestPermission();
-                            console.log('Permission:', permission);
-                            
-                            if (permission !== 'granted') {
-                                console.warn('⚠️ Browser notifications not granted, but continuing with FCM...');
-                                // Still continue - Firebase can send notifications even without browser permission
-                            }
-                        } else {
-                            console.warn('⚠️ Notification API exists but requestPermission is not available');
-                            console.log('ℹ️ Continuing with Firebase Cloud Messaging...');
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Error requesting notification permission:', error.message);
-                        console.log('ℹ️ Continuing anyway - Firebase will handle notifications');
-                        // Don't throw - continue with Firebase
-                    }
-                }
-                
-                // Step 3: Initialize Firebase Messaging
-                // Firebase should now use the already-registered service worker
-                console.log('Step 3: Initializing Firebase Messaging (using registered service worker)...');
-                messagingInstance = firebase.messaging();
-                
-                // Verify service worker is still registered
-                if (!serviceWorkerRegistration) {
-                    throw new Error('Service worker registration lost. Please refresh the page.');
-                }
-                
-                // Step 4: Get FCM token (use the registered service worker)
-                console.log('Step 4: Getting FCM token...');
-                const token = await messagingInstance.getToken({ 
-                    vapidKey: VAPID_KEY,
-                    serviceWorkerRegistration: serviceWorkerRegistration
-                });
-                
-                if (!token) {
-                    throw new Error('Failed to get FCM token. Make sure service worker is registered.');
-                }
-                
-                console.log('✅ FCM Token received:', token.substring(0, 20) + '...');
-                
-                // Step 5: Send token to backend
-                console.log('Step 5: Registering token with backend...');
-                const response = await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ token })
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Backend error response:', errorText);
-                    throw new Error(`Backend error (${response.status}): ${errorText}`);
-                }
-                
-                const result = await response.json();
-                console.log('Backend response:', result);
-                
-                // Step 6: Setup message handlers
-                setupMessageHandlers();
-                setupTokenRefresh();
-                
-                statusEl.textContent = '✅ Ready - Waiting for patient calls...';
-                statusEl.className = 'active';
-                refreshBtn.style.display = 'none';
-                console.log('✅ Successfully registered with backend');
-                
-                // Check if we need to start video from notification click
-                startVideoFromNotificationIfNeeded();
-            } catch (error) {
-                console.error('❌ Initialization error:', error);
-                
-                // Provide mobile-specific error messages
-                let errorMessage = error.message || String(error);
-                
-                // Handle APK/WebView service worker issues
-                if (isAPK && (errorMessage.includes('Service Worker') || errorMessage.includes('service worker'))) {
-                    errorMessage = 'APK/WebView Issue: Service Workers are required for Firebase Cloud Messaging.\n\n' +
-                                 'Solutions:\n' +
-                                 '1. Use the website version and "Add to Home Screen" (PWA) - Recommended\n' +
-                                 '2. Use a WebView that supports Service Workers (Chrome Custom Tabs)\n' +
-                                 '3. Implement native Firebase SDK in your APK instead of WebView\n\n' +
-                                 'The website version works perfectly - just open it in Chrome and add to home screen.';
-                    
-                    statusEl.innerHTML = '❌ APK/WebView Limitation<br><br>' +
-                                       '<small>Service Workers not supported in this APK.<br>' +
-                                       'Please use the website version instead.<br>' +
-                                       'Open in Chrome → Menu → "Add to Home Screen"</small>';
-                    statusEl.className = 'error';
-                    refreshBtn.style.display = 'block';
-                    
-                    console.error('💡 APK TROUBLESHOOTING:');
-                    console.error('Firebase Cloud Messaging for web REQUIRES Service Workers.');
-                    console.error('Most APK WebViews do not support Service Workers properly.');
-                    console.error('RECOMMENDED: Use the website as PWA instead of APK.');
-                    console.error('1. Open the website in Chrome browser');
-                    console.error('2. Menu → "Add to Home Screen"');
-                    console.error('3. This creates a PWA that works perfectly');
-                    return;
-                }
-                
-                // If it's a Notification error on mobile/iOS, make it non-fatal
-                // Also catch "Cannot find variable" errors which happen on iOS
-                const isNotificationError = (isMobile || isIOS) && (
-                    errorMessage.includes('Notification') || 
-                    errorMessage.includes('notification') ||
-                    errorMessage.includes('Cannot find variable') ||
-                    errorMessage.includes('is not defined') ||
-                    errorMessage.toLowerCase().includes('notification')
-                );
-                
-                if (isNotificationError) {
-                    if (isIOS) {
-                        console.log('ℹ️ Notification error on iOS - this is expected and non-fatal');
-                        console.log('ℹ️ iOS does not support browser Notification API');
-                    } else {
-                        console.log('ℹ️ Notification error on mobile - this is expected and non-fatal');
-                    }
-                    console.log('ℹ️ Firebase Cloud Messaging will handle notifications natively');
-                    
-                    // Try to continue anyway - Firebase doesn't need Notification API
-                    try {
-                        // Check if service worker is registered
-                        if (!serviceWorkerRegistration) {
-                            console.log('⚠️ Service worker not registered, attempting to register...');
-                            await registerServiceWorker();
-                        }
-                        
-                        if (!serviceWorkerRegistration) {
-                            throw new Error('Service worker registration failed - required for Firebase');
-                        }
-                        
-                        // Skip to Firebase initialization
-                        console.log('Attempting to continue with Firebase only (iOS/mobile mode)...');
-                        
-                        // Step 3: Initialize Firebase Messaging
-                        console.log('Step 3: Initializing Firebase Messaging...');
-                        messagingInstance = firebase.messaging();
-                        
-                        // Step 4: Get FCM token
-                        console.log('Step 4: Getting FCM token...');
-                        const token = await messagingInstance.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: serviceWorkerRegistration
-                        });
-                        
-                        if (!token) {
-                            throw new Error('Failed to get FCM token');
-                        }
-                        
-                        console.log('✅ FCM Token received:', token.substring(0, 20) + '...');
-                        
-                        // Step 5: Send token to backend
-                        console.log('Step 5: Registering token with backend...');
-                        const response = await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
-                            method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({ token })
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`Backend error (${response.status})`);
-                        }
-                        
-                        const result = await response.json();
-                        console.log('Backend response:', result);
-                        
-                        // Step 6: Setup message handlers
-                        setupMessageHandlers();
-                        setupTokenRefresh();
-                        
-                        const modeText = isIOS ? 'iOS mode' : 'Mobile mode';
-                        statusEl.textContent = `✅ Ready - Waiting for patient calls... (${modeText})`;
-                        statusEl.className = 'active';
-                        refreshBtn.style.display = 'none';
-                        console.log(`✅ Successfully registered with backend (${modeText})`);
-                        
-                        // Check if we need to start video from notification click
-                        startVideoFromNotificationIfNeeded();
-                        
-                        return; // Success - exit error handler
-                    } catch (retryError) {
-                        // If retry also fails, show error
-                        console.error('❌ Retry failed:', retryError);
-                        if (isIOS) {
-                            errorMessage = 'iOS: Notification API not available (expected), but Firebase setup failed: ' + retryError.message;
-                        } else {
-                            errorMessage = 'Mobile: Notification API not available, but Firebase setup also failed: ' + retryError.message;
-                        }
-                    }
-                }
-                
-                statusEl.textContent = '❌ Setup failed: ' + errorMessage;
-                statusEl.className = 'error';
-                refreshBtn.style.display = 'block';
-                
-                // Show detailed error in console
-                if (error.message.includes('Service Worker') || error.message.includes('service worker')) {
-                    if (isAPK) {
-                        console.error('💡 APK SERVICE WORKER ISSUE:');
-                        console.error('Most APK WebViews do NOT support Service Workers.');
-                        console.error('Firebase Cloud Messaging REQUIRES Service Workers.');
-                        console.error('');
-                        console.error('SOLUTIONS:');
-                        console.error('1. ✅ BEST: Use website as PWA (not APK)');
-                        console.error('   - Open website in Chrome');
-                        console.error('   - Menu → "Add to Home Screen"');
-                        console.error('   - Works perfectly with notifications');
-                        console.error('');
-                        console.error('2. Use Chrome Custom Tabs in your APK (supports service workers)');
-                        console.error('');
-                        console.error('3. Implement native Firebase SDK in APK (requires native code)');
-                    } else {
-                        console.error('💡 SERVICE WORKER TROUBLESHOOTING:');
-                        console.error('1. Verify firebase-messaging-sw.js exists in your repository');
-                        console.error('2. Check GitHub Pages URL:', window.location.origin);
-                        console.error('3. Try accessing:', window.location.origin + '/firebase-messaging-sw.js');
-                        console.error('4. If 404, the file is not deployed. Commit and push the file.');
-                        console.error('5. GitHub Pages can take 1-2 minutes to update after pushing');
-                    }
-                }
-                if (error.message.includes('Notification') && (isMobile || isIOS)) {
-                    if (isIOS) {
-                        console.error('💡 iOS NOTIFICATION INFO:');
-                        console.error('iOS does NOT support browser Notification API.');
-                        console.error('Firebase Cloud Messaging handles notifications natively on iOS.');
-                        console.error('The app will work - notifications will come through Firebase.');
-                        console.error('Make sure you are using Safari or Chrome with PWA (Add to Home Screen).');
-                    } else {
-                        console.error('💡 MOBILE NOTIFICATION INFO:');
-                        console.error('On mobile devices, Firebase Cloud Messaging handles notifications natively.');
-                        console.error('Browser Notification API is not required for mobile apps.');
-                        console.error('The app should still work - notifications will come through Firebase.');
-                    }
-                }
-                if (error.message.includes('CORS')) {
-                    console.error('💡 Tip: Check CORS settings in backend.py');
-                }
-                if (error.message.includes('Cannot connect')) {
-                    console.error('💡 Tip: Verify backend URL is correct and backend is running on Render');
-                }
-            }
-        }
+  // Parse vitals out of symptom string if present
+  let symptomDisplay = call.symptom;
+  let vitalsHtml = '';
+  const vitalsMatch = call.symptom.match(/\| Vitals: (.+)$/);
+  if (vitalsMatch) {
+    symptomDisplay   = call.symptom.replace(vitalsMatch[0], '').trim();
+    const vStr       = vitalsMatch[1];
+    const hrM        = vStr.match(/HR:([\d.]+)BPM/);
+    const spo2M      = vStr.match(/SpO2:([\d.]+)%/);
+    const tempM      = vStr.match(/Temp:([\d.]+)°C/);
+    const weightM    = vStr.match(/Weight:([\d.]+)kg/);
+    vitalsHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4rem;margin:.6rem 0;font-family:monospace;font-size:.7rem;">
+        ${hrM    ? `<div style="background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:5px;padding:.3rem .4rem;"><div style="color:var(--dim);font-size:.5rem;">HR</div><div style="color:var(--cyan);">${hrM[1]}</div><div style="color:var(--dim);font-size:.45rem;">BPM</div></div>` : ''}
+        ${spo2M  ? `<div style="background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:5px;padding:.3rem .4rem;"><div style="color:var(--dim);font-size:.5rem;">SpO₂</div><div style="color:var(--cyan);">${spo2M[1]}</div><div style="color:var(--dim);font-size:.45rem;">%</div></div>` : ''}
+        ${tempM  ? `<div style="background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:5px;padding:.3rem .4rem;"><div style="color:var(--dim);font-size:.5rem;">TEMP</div><div style="color:var(--cyan);">${tempM[1]}</div><div style="color:var(--dim);font-size:.45rem;">°C</div></div>` : ''}
+        ${weightM? `<div style="background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:5px;padding:.3rem .4rem;"><div style="color:var(--dim);font-size:.5rem;">WEIGHT</div><div style="color:var(--cyan);">${weightM[1]}</div><div style="color:var(--dim);font-size:.45rem;">kg</div></div>` : ''}
+      </div>
+    `;
+    // Prepare for video panel
+    call._vitals = { hr: hrM?.[1], spo2: spo2M?.[1], temp: tempM?.[1], weight: weightM?.[1] };
+  }
 
-        // =============================================
-        // 📩 SETUP MESSAGE HANDLERS
-        // =============================================
-        function setupMessageHandlers() {
-            if (!messagingInstance) return;
-            
-            messagingInstance.onMessage((payload) => {
-            console.log('📨 Incoming message received:', payload);
-            
-            try {
-                // Play notification sound
-                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVa3n7qxYEw==');
-                audio.play().catch((err) => console.warn('Audio play failed:', err));
-                
-                // Show browser notification (if Notification API is available and on desktop)
-                // On mobile/iOS, Firebase handles notifications natively, so skip browser notifications
-                if (hasNotificationAPI && !isMobile && !isIOS && NotificationAPI) {
-                    try {
-                        // Check permission safely
-                        const permission = typeof NotificationAPI.permission !== 'undefined' 
-                            ? NotificationAPI.permission 
-                            : 'default';
-                        
-                        if (permission === 'granted') {
-                            try {
-                                const notification = new NotificationAPI(
-                                    payload.notification?.title || '🚨 New Patient Call',
-                                    {
-                                        body: payload.notification?.body || 'A patient is calling',
-                                        icon: '/icon.png',
-                                        badge: '/badge.png',
-                                        requireInteraction: true,
-                                        tag: 'patient-call-' + Date.now()
-                                    }
-                                );
-                                
-                                notification.onclick = () => {
-                                    if (typeof window !== 'undefined' && window.focus) {
-                                        window.focus();
-                                    }
-                                    notification.close();
-                                    // Open video call if URL is available
-                                    const videoUrl = data.video_call_url;
-                                    if (videoUrl) {
-                                        startVideoCall(videoUrl, data);
-                                    }
-                                };
-                            } catch (error) {
-                                console.warn('Could not create browser notification:', error.message);
-                                // Continue anyway - Firebase will handle notifications
-                            }
-                        } else {
-                            console.log('ℹ️ Browser notification permission not granted - using Firebase native notifications');
-                        }
-                    } catch (error) {
-                        console.warn('Error checking notification support:', error.message);
-                        console.log('ℹ️ Continuing with Firebase native notifications');
-                    }
-                } else {
-                    // Mobile or no Notification API - Firebase handles it
-                    console.log('ℹ️ Using Firebase native notifications (mobile or no browser Notification API)');
-                }
-                
-                // Display in UI
-                const data = payload.data || payload.notification || {};
-                const callData = {
-                    patient_name: data.patient_name || 'Unknown',
-                    patient_id: data.patient_id || 'N/A',
-                    symptom: data.symptom || data.body || 'Not provided',
-                    video_call_url: data.video_call_url || null,
-                    timestamp: new Date().toISOString()
-                };
-                showCall(callData);
-                
-                // Auto-start video call if URL is available (foreground notification)
-                // This handles when app is already open and notification is received
-                if (callData.video_call_url) {
-                    console.log('🎥 Video call URL received in foreground, starting call immediately...');
-                    // Small delay to ensure UI is ready
-                    setTimeout(() => {
-                        startVideoCall(callData.video_call_url, callData);
-                    }, 500);
-                }
-            } catch (error) {
-                console.error('❌ Error handling message:', error);
-            }
-            });
-        }
+  card.innerHTML = `
+    <div class="call-card-title">&#128680; New Patient Call</div>
+    <div class="call-row"><span class="lbl">Patient Name</span><span class="val">${call.patient_name}</span></div>
+    <div class="call-row"><span class="lbl">Patient ID</span><span class="val">${call.patient_id}</span></div>
+    <div class="call-row"><span class="lbl">Time</span><span class="val">${new Date(call.timestamp).toLocaleTimeString()}</span></div>
+    ${symptomDisplay ? `<div class="call-row"><span class="lbl">Symptoms</span><span class="val" style="color:rgba(255,180,0,.9);">${symptomDisplay}</span></div>` : ''}
+    ${vitalsHtml}
+    <div class="call-btn-row">
+      ${call.video_call_url
+        ? `<button class="btn-accept" onclick="acceptCall(${JSON.stringify(JSON.stringify(call))}, '${card.id}')">&#9989; Accept Call</button>`
+        : ''}
+      <button class="btn-reject" onclick="rejectCall('${card.id}')">&#10060; Reject</button>
+    </div>
+  `;
 
-        // Handle token refresh (will be set up after messaging is initialized)
-        function setupTokenRefresh() {
-            if (!messagingInstance || !serviceWorkerRegistration) {
-                return;
-            }
-            
-            // Firebase compat API doesn't have onTokenRefresh method
-            // Firebase handles token refresh automatically, but we can set up a periodic check
-            // to re-register the token with our backend if it changes
-            try {
-                // Periodically check token and re-register if needed (every 10 minutes)
-                setInterval(async () => {
-                    try {
-                        const currentToken = await messagingInstance.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: serviceWorkerRegistration
-                        });
-                        if (currentToken) {
-                            // Re-register with backend to ensure we have the latest token
-                            await fetch(`${BACKEND_URL}/api/doctor/register-token`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ token: currentToken })
-                            });
-                            console.log('🔄 Token re-registered with backend');
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Token refresh check failed:', error);
-                    }
-                }, 600000); // Check every 10 minutes
-                
-                console.log('✅ Token refresh monitoring set up (periodic check every 10 minutes)');
-            } catch (error) {
-                console.warn('⚠️ Could not set up token refresh monitoring:', error);
-                // This is not critical - Firebase will handle token refresh automatically
-            }
-        }
+  box.insertBefore(card, box.firstChild);
 
-        // =============================================
-        // 🎨 DISPLAY CALL IN UI
-        // =============================================
-        function showCall(call) {
-            const callBox = document.createElement('div');
-            callBox.className = 'call-box';
-            
-            let videoButtonHtml = '';
-            if (call.video_call_url) {
-                videoButtonHtml = `<button class="video-call-btn" onclick="startVideoCall('${call.video_call_url}', ${JSON.stringify(call).replace(/'/g, "&#39;")})">🎥 Start Video Call</button>`;
-            }
-            
-            callBox.innerHTML = `
-                <h3>📞 New Patient Call</h3>
-                <div class="call-info"><strong>Patient Name:</strong> ${call.patient_name}</div>
-                <div class="call-info"><strong>Patient ID:</strong> ${call.patient_id}</div>
-                <div class="call-info"><strong>Symptoms:</strong> ${call.symptom}</div>
-                <div class="call-info"><strong>Time:</strong> ${new Date(call.timestamp).toLocaleString()}</div>
-                ${videoButtonHtml}
-            `;
-            
-            callsContainer.insertBefore(callBox, callsContainer.firstChild);
-            
-            // Remove after 5 minutes
-            setTimeout(() => {
-                callBox.style.opacity = '0';
-                setTimeout(() => callBox.remove(), 300);
-            }, 300000);
-        }
+  // Play ring sound
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain= ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(); osc.stop(ctx.currentTime + 0.6);
+  } catch(e) {}
 
-        // =============================================
-        // 🎥 VIDEO CALL FUNCTIONS
-        // =============================================
-        function startVideoCall(videoUrl, callData) {
-            console.log('🎥 Starting video call:', videoUrl);
-            const videoContainer = document.getElementById('videoContainer');
-            const jitsiContainer = document.getElementById('jitsiContainer');
-            
-            if (!videoContainer || !jitsiContainer) {
-                console.error('Video container elements not found');
-                return;
-            }
-            
-            // Extract room name from URL
-            // URL format: https://meet.jit.si/ROOM_NAME
-            let roomName = '';
-            try {
-                const url = new URL(videoUrl);
-                roomName = url.pathname.substring(1); // Remove leading slash
-                if (!roomName) {
-                    // Fallback: extract from URL string
-                    const match = videoUrl.match(/meet\.jit\.si\/([^\/\?#]+)/);
-                    roomName = match ? match[1] : 'telemedicine-call-' + Date.now();
-                }
-            } catch (e) {
-                console.warn('Could not parse URL, using fallback room name');
-                roomName = 'telemedicine-call-' + Date.now();
-            }
-            
-            console.log('📹 Room name:', roomName);
-            
-            // Clean up any existing Jitsi instance
-            if (jitsiApi) {
-                try {
-                    jitsiApi.dispose();
-                } catch (e) {
-                    console.warn('Error disposing previous Jitsi instance:', e);
-                }
-                jitsiApi = null;
-            }
-            
-            // Clear container
-            jitsiContainer.innerHTML = '';
-            
-            // Store call data for patient info display
-            currentCallData = callData || {};
-            
-            // Display patient information
-            displayPatientInfo(currentCallData);
-            
-            // Initialize Jitsi Meet External API with DIRECT JOIN (NO LOGIN, NO PREJOIN)
-            const domain = 'meet.jit.si';
-            const options = {
-                roomName: roomName,
-                parentNode: jitsiContainer,
-                width: '100%',
-                height: '100%',
-                configOverwrite: {
-                    // CRITICAL: Disable ALL prompts and login screens
-                    prejoinPageEnabled: false,        // NO pre-join screen - join directly
-                    requireDisplayName: false,        // NO name prompt
-                    enableWelcomePage: false,         // NO welcome page
-                    disableDeepLinking: true,         // Disable deep linking
-                    startWithAudioMuted: false,      // Start with audio ON
-                    startWithVideoMuted: false,       // Start with video ON
-                    enableLayerSuspension: true,
-                    enableNoAudioDetection: true,
-                    enableNoisyMicDetection: true,
-                    enableTalkWhileMuted: false,
-                    enableClosePage: true,
-                    disableInviteFunctions: true,     // Disable invite buttons
-                    disableRemoteMute: false,
-                    enableInsecureRoomNameWarning: false,
-                    enableTCC: true,
-                    // NO LOGIN - join directly
-                    enableLoginPage: false,           // Disable login page
-                    enableUserRolesBasedOnToken: false, // No token-based roles
-                    // Doctor is moderator - they control the meeting
-                    // When doctor joins, the meeting STARTS immediately
-                    defaultLanguage: 'en',
-                    p2p: {
-                        enabled: true,
-                        stunServers: [
-                            { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
-                        ]
-                    },
-                    lobby: {
-                        enabled: false                // NO waiting room - join directly
-                    },
-                    toolbarButtons: [
-                        'microphone',
-                        'camera',
-                        'closedcaptions',
-                        'desktop',
-                        'fullscreen',
-                        'fodeviceselection',
-                        'hangup',
-                        'profile',
-                        'recording',
-                        'settings',
-                        'raisehand',
-                        'videoquality',
-                        'filmstrip',
-                        'feedback',
-                        'stats',
-                        'shortcuts'
-                    ]
-                },
-                interfaceConfigOverwrite: {
-                    TOOLBAR_BUTTONS: [
-                        'microphone',
-                        'camera',
-                        'closedcaptions',
-                        'desktop',
-                        'fullscreen',
-                        'fodeviceselection',
-                        'hangup',
-                        'profile',
-                        'recording',
-                        'settings',
-                        'raisehand',
-                        'videoquality',
-                        'filmstrip',
-                        'feedback',
-                        'stats',
-                        'shortcuts'
-                    ],
-                    SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile'],
-                    DEFAULT_BACKGROUND: '#667eea',
-                    INITIAL_TOOLBAR_TIMEOUT: 20000,
-                    TOOLBAR_TIMEOUT: 4000,
-                    HIDE_INVITE_MORE_HEADER: true
-                },
-                userInfo: {
-                    displayName: 'Doctor',            // Set name directly - no prompt
-                    email: ''                         // Empty email - no prompt
-                },
-                onload: function() {
-                    console.log('✅ Jitsi Meet loaded - Doctor will join directly (NO LOGIN)');
-                }
-            };
-            
-            try {
-                // Initialize Jitsi Meet API
-                jitsiApi = new JitsiMeetExternalAPI(domain, options);
-                console.log('✅ Jitsi Meet API initialized');
-                
-                // Event handlers
-                jitsiApi.addEventListener('videoConferenceJoined', () => {
-                    console.log('✅ Doctor joined video conference - MEETING STARTS NOW');
-                    // Doctor is moderator - when doctor joins, meeting is active
-                    // Patient will see doctor automatically
-                    // NO LOGIN was required - direct join successful
-                    
-                    // Ensure doctor has moderator permissions
-                    try {
-                        // Doctor is first to join or automatically moderator
-                        console.log('👨‍⚕️ Doctor is in meeting - meeting is active');
-                    } catch(e) {
-                        console.log('Note: Doctor role will be assigned automatically');
-                    }
-                });
-                
-                // Doctor is moderator - check if they have moderator role
-                jitsiApi.addEventListener('participantRoleChanged', (event) => {
-                    if (event.role === 'moderator') {
-                        console.log('👨‍⚕️ Doctor is moderator - meeting is active');
-                    }
-                });
-                
-                // Handle any errors that might show login
-                jitsiApi.addEventListener('error', (error) => {
-                    console.warn('Jitsi error:', error);
-                    if (error && error.message && error.message.includes('login')) {
-                        console.error('❌ Login error detected - this should not happen');
-                    }
-                });
-                
-                jitsiApi.addEventListener('readyToClose', () => {
-                    console.log('🔴 Ready to close');
-                    endVideoCall();
-                });
-                
-                jitsiApi.addEventListener('participantLeft', (event) => {
-                    console.log('👋 Participant left:', event);
-                    // If patient left, doctor can end the call
-                });
-                
-                // Show video container
-                videoContainer.classList.add('active');
-                
-                // Focus on video container
-                videoContainer.focus();
-                
-            } catch (error) {
-                console.error('❌ Error initializing Jitsi Meet:', error);
-                alert('Failed to start video call. Please try again.');
-            }
-        }
+  // Auto-remove after 5 min
+  setTimeout(() => { try { card.remove(); _checkEmpty(); } catch(e) {} }, 300_000);
+}
 
-        // Display patient information during video call
-        function displayPatientInfo(callData) {
-            const patientInfoSection = document.getElementById('patientInfoSection');
-            if (!patientInfoSection) return;
-            
-            if (!callData || (!callData.patient_name && !callData.patient_id)) {
-                patientInfoSection.innerHTML = '<div class="patient-info-card"><p style="text-align: center; color: #999;">No patient information available</p></div>';
-                return;
-            }
-            
-            const patientName = callData.patient_name || 'Unknown';
-            const patientId = callData.patient_id || 'N/A';
-            const symptoms = callData.symptom || 'Not provided';
-            const timestamp = callData.timestamp ? new Date(callData.timestamp).toLocaleString() : new Date().toLocaleString();
-            
-            patientInfoSection.innerHTML = `
-                <div class="patient-info-card">
-                    <h2>👤 Patient Information</h2>
-                    <div class="patient-info-item">
-                        <strong>Patient Name</strong>
-                        <div class="value">${patientName}</div>
-                    </div>
-                    <div class="patient-info-item">
-                        <strong>Patient ID</strong>
-                        <div class="value">${patientId}</div>
-                    </div>
-                    <div class="patient-info-item">
-                        <strong>Call Time</strong>
-                        <div class="value">${timestamp}</div>
-                    </div>
-                    <div class="symptoms-box">
-                        <strong>📋 Symptoms / Chief Complaint</strong>
-                        <div class="symptom-text">${symptoms}</div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function endVideoCall() {
-            console.log('🔴 Ending video call');
-            
-            // Clear patient info
-            currentCallData = null;
-            const patientInfoSection = document.getElementById('patientInfoSection');
-            if (patientInfoSection) {
-                patientInfoSection.innerHTML = '';
-            }
-            
-            // Dispose Jitsi API instance
-            if (jitsiApi) {
-                try {
-                    jitsiApi.executeCommand('hangup');
-                    jitsiApi.dispose();
-                    console.log('✅ Jitsi API disposed');
-                } catch (e) {
-                    console.warn('Error disposing Jitsi API:', e);
-                }
-                jitsiApi = null;
-            }
-            
-            // Clear container
-            const jitsiContainer = document.getElementById('jitsiContainer');
-            if (jitsiContainer) {
-                jitsiContainer.innerHTML = '';
-            }
-            
-            // Hide video container
-            const videoContainer = document.getElementById('videoContainer');
-            if (videoContainer) {
-                videoContainer.classList.remove('active');
-            }
-        }
+function rejectCall(cardId) {
+  document.getElementById(cardId)?.remove();
+  _checkEmpty();
+}
 
-        // Handle messages from service worker (notification clicks when app is open)
-        if ('serviceWorker' in navigator) {
-            // Listen for messages from service worker
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                console.log('📨 Message received from service worker:', event.data);
-                if (event.data && event.data.type === 'START_VIDEO_CALL') {
-                    console.log('🎥 Starting video call from service worker notification click:', event.data.videoUrl);
-                    // Start video call immediately
-                    setTimeout(() => {
-                        if (event.data.videoUrl) {
-                            startVideoCall(event.data.videoUrl, {});
-                        }
-                    }, 300);
-                }
-            });
-            
-            // Also listen via message channel for better reliability
-            navigator.serviceWorker.ready.then((registration) => {
-                // Set up message channel listener
-                if (registration.active) {
-                    registration.active.addEventListener('message', (event) => {
-                        console.log('📨 Message from active service worker:', event.data);
-                        if (event.data && event.data.type === 'START_VIDEO_CALL') {
-                            setTimeout(() => {
-                                if (event.data.videoUrl) {
-                                    startVideoCall(event.data.videoUrl, {});
-                                }
-                            }, 300);
-                        }
-                    });
-                }
-            });
-        }
+function _checkEmpty() {
+  const box = document.getElementById('callsBox');
+  if (!box.children.length) {
+    box.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128657;</div>Waiting for incoming calls…</div>';
+  }
+}
 
-        // Check URL for video parameter (when app opens from notification click)
-        // This handles mobile notification clicks that open the app
-        let videoUrlFromNotification = null;
-        
-        function checkVideoUrlAndStart() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const videoUrl = urlParams.get('video');
-            if (videoUrl) {
-                videoUrlFromNotification = decodeURIComponent(videoUrl);
-                console.log('🎥 Video URL found in query string (from notification click):', videoUrlFromNotification);
-                console.log('🎥 Will start video call after app initializes...');
-                
-                // Clean URL to remove parameter
-                if (window.history && window.history.replaceState) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-            }
-        }
+/* ════════════════════════════════════════════════════
+   ACCEPT CALL — open Jitsi
+════════════════════════════════════════════════════ */
+function acceptCall(callJson, cardId) {
+  const call = JSON.parse(callJson);
+  document.getElementById(cardId)?.remove();
+  _checkEmpty();
+  startVideo(call.video_call_url, call);
+}
 
-        // Check on page load
-        window.addEventListener('load', checkVideoUrlAndStart);
-        
-        // Also check immediately (in case this script runs before page load)
-        checkVideoUrlAndStart();
-        
-        // Function to start video from notification (called after app initializes)
-        function startVideoFromNotificationIfNeeded() {
-            if (videoUrlFromNotification) {
-                console.log('🎥 Starting video call from notification click...');
-                setTimeout(() => {
-                    startVideoCall(videoUrlFromNotification, {});
-                    videoUrlFromNotification = null; // Clear after starting
-                }, 500);
-            }
-        }
+function startVideo(videoUrl, call) {
+  let room = videoUrl;
+  try { room = new URL(videoUrl).pathname.replace(/^\//, ''); } catch(e) {}
 
-        // Start on page load
-        init();
-    </script>
+  /* fill patient info strip */
+  document.getElementById('viName').textContent   = call.patient_name || '--';
+  document.getElementById('viId').textContent     = call.patient_id   || '--';
+  document.getElementById('viTime').textContent   = call.timestamp
+    ? new Date(call.timestamp).toLocaleString() : new Date().toLocaleString();
+  document.getElementById('viSymptoms').textContent =
+    (call.symptom || '').replace(/\| Vitals:.*$/, '').trim() || '--';
+
+  const v = call._vitals || {};
+  document.getElementById('viHr').textContent     = v.hr     ? v.hr   + ' BPM' : '--';
+  document.getElementById('viSpo2').textContent   = v.spo2   ? v.spo2 + ' %'   : '--';
+  document.getElementById('viTemp').textContent   = v.temp   ? v.temp + ' °C'  : '--';
+  document.getElementById('viWeight').textContent = v.weight ? v.weight + ' kg': '--';
+
+  /* show overlay */
+  document.getElementById('videoOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  /* clean up previous */
+  if (_jitsi) { try { _jitsi.dispose(); } catch(e) {} _jitsi = null; }
+  document.getElementById('jitsiFrame').innerHTML = '';
+
+  /* start Jitsi */
+  try {
+    _jitsi = new JitsiMeetExternalAPI('meet.jit.si', {
+      roomName: room,
+      parentNode: document.getElementById('jitsiFrame'),
+      width: '100%', height: '100%',
+      configOverwrite: {
+        prejoinPageEnabled:     false,
+        requireDisplayName:     false,
+        enableWelcomePage:      false,
+        disableDeepLinking:     true,
+        startWithAudioMuted:    false,
+        startWithVideoMuted:    false,
+        disableInviteFunctions: true,
+        lobby: { enabled: false },
+      },
+      interfaceConfigOverwrite: {
+        HIDE_INVITE_MORE_HEADER: true,
+        TOOLBAR_BUTTONS: ['microphone','camera','fullscreen','hangup','settings','raisehand','videoquality'],
+      },
+      userInfo: { displayName: 'Doctor' },
+    });
+    _jitsi.addEventListener('readyToClose', endVideoCall);
+  } catch(err) {
+    console.error('Jitsi init error:', err);
+    alert('Failed to start video call: ' + err.message);
+    endVideoCall();
+  }
+}
+
+function endVideoCall() {
+  if (_jitsi) {
+    try { _jitsi.executeCommand('hangup'); _jitsi.dispose(); } catch(e) {}
+    _jitsi = null;
+  }
+  document.getElementById('jitsiFrame').innerHTML = '';
+  document.getElementById('videoOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+window.endVideoCall = endVideoCall;
+
+/* start on page load */
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
