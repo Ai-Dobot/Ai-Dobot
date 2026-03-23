@@ -552,10 +552,10 @@
           <div class="avatar-opt" data-emoji="👩‍🔬">👩‍🔬</div>
           <div class="avatar-opt" data-emoji="🩺">🩺</div>
         </div>
-        <div class="field"><label>Full Name</label><input id="inName2" type="text" placeholder="Dr. Your Name" autocomplete="name"/></div>
-        <div class="field"><label>System ID</label>
-          <input id="inSysId2" placeholder="DOC-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:'Courier New',monospace"/>
-          <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:.28rem;font-family:monospace">Your System ID was given when you registered. Approved doctors only.</div>
+        <div class="field"><label>Email / Username / Phone</label><input id="inIdent2" type="text" placeholder="doctor@email.com or dr_username or +234..." autocomplete="username"/></div>
+        <div class="field"><label>Password</label>
+          <input id="inPwd2" type="password" placeholder="Your password" autocomplete="current-password"/>
+          <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:.28rem;font-family:monospace">Approved doctors can sign in with email, username, or phone + password.</div>
         </div>
         <button class="btn-signin" id="btnSignin2" onclick="signIn2()">✅ Sign In as Doctor</button>
         <div class="signin-err" id="signinErr2"></div>
@@ -570,6 +570,7 @@
         <div class="pfield"><label>Specialty *</label><input id="drS" placeholder="Cardiology"/></div>
       </div>
       <div class="pfield"><label>Email *</label><input id="drE" type="email" placeholder="doctor@email.com"/></div>
+      <div class="pfield"><label>Username (optional)</label><input id="drU" placeholder="dr_sarah"/></div>
       <div class="pfield"><label>Password *</label><input id="drP" type="password" placeholder="Min 8 characters"/></div>
       <div class="pfr">
         <div class="pfield"><label>Country</label><input id="drCo" placeholder="Nigeria"/></div>
@@ -1224,6 +1225,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     <div id="hRegMsg" class="pmsg"></div>
     <div class="pfield"><label>Hospital Name *</label><input id="hRN" placeholder="City Medical Center"/></div>
     <div class="pfield"><label>Email *</label><input id="hRE" type="email" placeholder="admin@hospital.com"/></div>
+    <div class="pfield"><label>Username (optional)</label><input id="hRU" placeholder="city_hospital"/></div>
     <div class="pfield"><label>Password *</label><input id="hRP" type="password" placeholder="Min 8 characters"/></div>
     <div class="pfr">
       <div class="pfield"><label>Country</label><input id="hRCo" placeholder="Nigeria"/></div>
@@ -1241,8 +1243,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Login -->
   <div id="hosp-log" class="ptp">
     <div id="hLogMsg" class="pmsg"></div>
-    <div class="pfield"><label>Hospital Name</label><input id="hLName" placeholder="City Medical Center"/></div>
-    <div class="pfield"><label>System ID</label><input id="hLSysId" placeholder="HSP-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
+    <div class="pfield"><label>Email / Username / Phone</label><input id="hLIdent" placeholder="hospital@email.com or city_hospital or +234..."/></div>
+    <div class="pfield"><label>Password</label><input id="hLPwd" type="password" placeholder="Your password"/></div>
     <button class="pbtn pg" onclick="hospLogin()">Sign In</button>
     <button class="pbtn out" onclick="ptab('hosp','reg')">New hospital? Register</button>
   </div>
@@ -1295,6 +1297,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     </div>
     <div class="pfr">
       <div class="pfield"><label>Full Name</label><input id="pSN" placeholder="Your name"/></div>
+      <div class="pfield"><label>Username (optional)</label><input id="pSU" placeholder="your_username"/></div>
       <div class="pfield"><label>Date of Birth</label><input id="pSDoB" type="date"/></div>
     </div>
     <div class="pfr">
@@ -1308,10 +1311,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Login -->
   <div id="pat-log" class="ptp">
     <div id="pLogMsg" class="pmsg"></div>
-    <div class="pfield"><label>Your Name</label><input id="pLName" placeholder="Your full name"/></div>
-    <div class="pfield"><label>System ID</label><input id="pLId" placeholder="USR-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/>
-      <div style="font-size:.65rem;color:rgba(255,255,255,.38);margin-top:.25rem;font-family:monospace">Your System ID was printed on your robot session receipt.</div>
+    <div class="pfield"><label>Email / Username / Phone</label><input id="pLIdent" placeholder="you@email.com or your_username or +1..."/>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.38);margin-top:.25rem;font-family:monospace">You can still use your System ID here if needed.</div>
     </div>
+    <div class="pfield"><label>Password</label><input id="pLPwd" type="password" placeholder="Your password"/></div>
     <button class="pbtn pa" onclick="patLogin()">Sign In</button>
     <button class="pbtn out" onclick="ptab('pat','setup')">First time? Activate Account</button>
   </div>
@@ -1356,6 +1359,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     <div id="phRegMsg" class="pmsg"></div>
     <div class="pfield"><label>Pharmacy Name *</label><input id="phRN" placeholder="HealthFirst Pharmacy"/></div>
     <div class="pfield"><label>Email *</label><input id="phRE" type="email" placeholder="pharmacy@email.com"/></div>
+    <div class="pfield"><label>Username (optional)</label><input id="phRU" placeholder="healthfirst"/></div>
     <div class="pfield"><label>Password *</label><input id="phRP" type="password" placeholder="Min 8 characters"/></div>
     <div class="pfr">
       <div class="pfield"><label>Country</label><input id="phRCo" placeholder="Kenya"/></div>
@@ -1378,8 +1382,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Login -->
   <div id="pharm-log" class="ptp">
     <div id="phLogMsg" class="pmsg"></div>
-    <div class="pfield"><label>Pharmacy Name</label><input id="phLName" placeholder="HealthFirst Pharmacy"/></div>
-    <div class="pfield"><label>System ID</label><input id="phLSysId" placeholder="PHM-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
+    <div class="pfield"><label>Email / Username / Phone</label><input id="phLIdent" placeholder="pharmacy@email.com or healthfirst or +254..."/></div>
+    <div class="pfield"><label>Password</label><input id="phLPwd" type="password" placeholder="Your password"/></div>
     <button class="pbtn pp" onclick="pharmLogin()">Sign In</button>
     <button class="pbtn out" onclick="ptab('pharm','reg')">New pharmacy? Register</button>
   </div>
@@ -1531,6 +1535,7 @@ async function hospReg() {
   try {
     pMsg('hRegMsg','inf','Registering…');
     const r = await pReq('POST','/api/hospitals/register',{name:n,email:e,password:p,
+      username:pv('hRU')||null,
       country:pv('hRCo'),city:pv('hRCi'),phone:pv('hRPh'),registration_no:pv('hRReg'),address:pv('hRAddr')});
     ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
     pMsg('hRegMsg','ok',`✅ Registered! System ID: ${r.system_id} — Save this, give it to your robot operator.`);
@@ -1538,12 +1543,12 @@ async function hospReg() {
   } catch(e) { pMsg('hRegMsg','er', e.message); }
 }
 async function hospLogin() {
-  const name  = pv('hLName').trim();
-  const sysId = pv('hLSysId').trim().toUpperCase();
-  if (!name||!sysId) return pMsg('hLogMsg','er','Please enter your hospital name and System ID');
+  const identifier = pv('hLIdent').trim();
+  const password = pv('hLPwd');
+  if (!identifier||!password) return pMsg('hLogMsg','er','Please enter your email/username/phone and password');
   try {
     pMsg('hLogMsg','inf','Signing in…');
-    const r = await pReq('POST','/api/hospitals/login_by_sysid',{name, system_id: sysId});
+    const r = await pReq('POST','/api/hospitals/login',{identifier, password});
     ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
     loadHospDash();
   } catch(e) { pMsg('hLogMsg','er', e.message); }
@@ -1608,17 +1613,17 @@ async function patSetup() {
   try {
     pMsg('pSetMsg','inf','Activating…');
     const r = await pReq('POST','/api/patients/setup',{system_id:sid,password:p,
-      name:pv('pSN'),phone:pv('pSPh'),country:pv('pSCo'),date_of_birth:pv('pSDoB')||null});
+      name:pv('pSN'),username:pv('pSU')||null,phone:pv('pSPh'),country:pv('pSCo'),date_of_birth:pv('pSDoB')||null});
     ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
     loadPatDash();
   } catch(e) { pMsg('pSetMsg','er', e.message); }
 }
 async function patLogin() {
-  // Hidden admin entry — System ID: AIDOBOT, Password: AIDOBOT
-  const name = pv('pLName').trim();
-  const sid  = pv('pLId').trim().toUpperCase();
   // Hidden admin entry
-  if (sid === 'AIDOBOT' && name.toUpperCase() === 'AIDOBOT') {
+  const identifier = pv('pLIdent').trim();
+  const password = pv('pLPwd');
+  // Hidden admin entry
+  if (identifier.toUpperCase() === 'AIDOBOT' && password.toUpperCase() === 'AIDOBOT') {
     adminTok = 'aidoBot-admin-2026!';
     localStorage.setItem('t_admin', adminTok);
     document.getElementById('adminLogin').style.display = 'none';
@@ -1627,10 +1632,10 @@ async function patLogin() {
     loadAdminData();
     return;
   }
-  if (!name||!sid) return pMsg('pLogMsg','er','Please enter your name and System ID');
+  if (!identifier||!password) return pMsg('pLogMsg','er','Please enter your email/username/phone and password');
   try {
     pMsg('pLogMsg','inf','Signing in…');
-    const r = await pReq('POST','/api/patients/login_by_sysid',{name, system_id: sid});
+    const r = await pReq('POST','/api/patients/login',{identifier, password});
     ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
     loadPatDash();
   } catch(e) { pMsg('pLogMsg','er', e.message); }
@@ -1687,6 +1692,7 @@ async function pharmReg() {
     pMsg('phRegMsg','inf','Submitting registration…');
     const r = await pReq('POST','/api/pharmacies/register',{
       name:n, email:e, password:p,
+      username:pv('phRU')||null,
       country:pv('phRCo'), city:pv('phRCi'), phone:pv('phRPh'),
       license_no:pv('phRLic'), address:pv('phRAddr'),
       license_doc_url:pv('phRLicUrl')
@@ -1695,12 +1701,12 @@ async function pharmReg() {
   } catch(e) { pMsg('phRegMsg','er', e.message); }
 }
 async function pharmLogin() {
-  const name  = pv('phLName').trim();
-  const sysId = pv('phLSysId').trim().toUpperCase();
-  if (!name||!sysId) return pMsg('phLogMsg','er','Please enter your pharmacy name and System ID');
+  const identifier = pv('phLIdent').trim();
+  const password = pv('phLPwd');
+  if (!identifier||!password) return pMsg('phLogMsg','er','Please enter your email/username/phone and password');
   try {
     pMsg('phLogMsg','inf','Signing in…');
-    const r = await pReq('POST','/api/pharmacies/login_by_sysid',{name, system_id: sysId});
+    const r = await pReq('POST','/api/pharmacies/login',{identifier, password});
     ptok.pharm = r.token; localStorage.setItem('t_pharm', r.token);
     loadPharmDash();
   } catch(e) { pMsg('phLogMsg','er', e.message); }
@@ -1824,22 +1830,21 @@ function docPortalTab(which) {
 
 /* signIn2 — mirrors original signIn but uses avatarGrid2 / inName2 / inSpecialty2 */
 async function signIn2() {
-  const name  = document.getElementById('inName2').value.trim();
-  const sysId = document.getElementById('inSysId2').value.trim().toUpperCase();
+  const identifier = document.getElementById('inIdent2').value.trim();
+  const password = document.getElementById('inPwd2').value;
   const err   = document.getElementById('signinErr2');
-  if (!name)  { err.textContent='Please enter your full name.'; err.style.display='block'; return; }
-  if (!sysId) { err.textContent='Please enter your System ID (e.g. DOC-XXXXXXXX).'; err.style.display='block'; return; }
+  if (!identifier || !password) { err.textContent='Please enter your email/username/phone and password.'; err.style.display='block'; return; }
   err.style.display = 'none';
 
-  // Look up doctor by system ID to get their specialty
+  // Look up doctor by identifier/password to get profile and specialty
   try {
-    const r = await pReq('POST','/api/reg_doctors/login_by_sysid',{ name, system_id: sysId });
+    const r = await pReq('POST','/api/reg_doctors/login',{ identifier, password });
     // Store profile for Firebase sign-in
     const selAv = document.querySelector('#avatarGrid2 .avatar-opt.selected');
     if (selAv) _selectedAvatar = selAv.dataset.emoji;
     // Mirror into original Firebase sign-in fields
-    document.getElementById('inName').value      = name;
-    document.getElementById('inSpecialty').value = r.specialty || 'General Physician';
+    document.getElementById('inName').value      = r?.doctor?.name || identifier;
+    document.getElementById('inSpecialty').value = r?.doctor?.specialty || 'General Physician';
     document.querySelectorAll('#avatarGrid .avatar-opt').forEach(e => e.classList.remove('selected'));
     const orig = document.querySelector(`#avatarGrid .avatar-opt[data-emoji="${_selectedAvatar}"]`);
     if (orig) orig.classList.add('selected');
@@ -1868,6 +1873,7 @@ async function docRegister() {
     pMsg('docRegMsg','inf','Submitting registration…');
     const r = await pReq('POST','/api/reg_doctors/register',{
       name:n, specialty:s, email:e, password:p,
+      username:pv('drU')||null,
       country:pv('drCo'), city:pv('drCi'), phone:pv('drPh'),
       qualifications:pv('drQ'), bio:pv('drBio'),
       consultation_fee:parseFloat(pv('drFee'))||0,
