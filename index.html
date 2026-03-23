@@ -838,11 +838,13 @@ async function signIn() {
 
     // Show dashboard
     showDashboard();
+    return true;
 
   } catch(e) {
     showErr('Sign in failed: ' + e.message);
     btn.disabled    = false;
     btn.textContent = '✅ Sign In as Doctor';
+    return false;
   }
 }
 
@@ -1892,8 +1894,10 @@ async function signIn2() {
   const identifier = document.getElementById('inIdent2').value.trim();
   const password = document.getElementById('inPwd2').value;
   const err   = document.getElementById('signinErr2');
+  const btn   = document.getElementById('btnSignin2');
   if (!identifier || !password) { err.textContent='Please enter your email/username/phone and password.'; err.style.display='block'; return; }
   err.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Signing in…'; }
 
   // Look up doctor by identifier/password to get profile and specialty
   try {
@@ -1907,13 +1911,20 @@ async function signIn2() {
     document.querySelectorAll('#avatarGrid .avatar-opt').forEach(e => e.classList.remove('selected'));
     const orig = document.querySelector(`#avatarGrid .avatar-opt[data-emoji="${_selectedAvatar}"]`);
     if (orig) orig.classList.add('selected');
-    await signIn();
+    const ok = await signIn();
+    if (!ok) {
+      const hiddenErr = document.getElementById('signinErr')?.textContent || 'Sign in failed. Please try again.';
+      err.textContent = hiddenErr;
+      err.style.display = 'block';
+    }
   } catch(e) {
     err.textContent = e.message;
     err.style.display = 'block';
     if (pIsPendingErr(e.message)) {
       pPopup('Waiting For Admin Approval', 'Checking your approval status... Your doctor account is pending admin approval. Please come back and sign in after approval.', true, 5500);
     }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Sign In as Doctor'; }
   }
 }
 
