@@ -805,8 +805,14 @@ async function signIn() {
       console.log('Notification permission skipped (non-fatal):', e.message);
     }
 
-    const fcmToken = await _msg.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: _sw });
-    if (!fcmToken) throw new Error('Could not get FCM token. Check browser permissions.');
+    let fcmToken = null;
+    try {
+      fcmToken = await _msg.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: _sw });
+    } catch(e) {
+      console.log('FCM token unavailable; continuing with polling mode:', e.message);
+    }
+    // Fallback token keeps backend sign-in working even when push is blocked.
+    if (!fcmToken) fcmToken = `no-fcm-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
 
     // Register with backend
     const body = {
@@ -1526,6 +1532,43 @@ function pv(id) { return document.getElementById(id)?.value || ''; }
 function psv(id, v) { const e = document.getElementById(id); if (e && v != null) e.value = v; }
 function pMsg(id, type, txt) { const e = document.getElementById(id); if (!e) return; e.className = `pmsg ${type}`; e.textContent = txt; }
 function pFmt(ts) { if (!ts) return '—'; return new Date(ts).toLocaleString('en', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function pIsPendingErr(msg) {
+  return /pending.*approval|approval.*pending|wait.*approval/i.test(msg || '');
+}
+function pClosePopup() {
+  const el = document.getElementById('pGlobalPopup');
+  if (el) el.remove();
+}
+function pPopup(title, message, loading=false, autoCloseMs=0) {
+  pClosePopup();
+  const wrap = document.createElement('div');
+  wrap.id = 'pGlobalPopup';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:1rem';
+  const card = document.createElement('div');
+  card.style.cssText = 'width:min(460px,95vw);background:#0b1220;border:1px solid rgba(0,229,255,.28);border-radius:12px;padding:1rem 1rem .9rem;color:#e6f7ff;box-shadow:0 12px 36px rgba(0,0,0,.35);font-family:monospace';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.5rem">
+      <div style="font-weight:700;color:#00e5ff;letter-spacing:.04em">${title}</div>
+      <button id="pGlobalPopupClose" style="background:none;border:none;color:rgba(255,255,255,.65);cursor:pointer;font-size:1.05rem">✕</button>
+    </div>
+    <div style="display:flex;gap:.7rem;align-items:flex-start">
+      ${loading ? '<div style="width:16px;height:16px;border:2px solid rgba(0,229,255,.25);border-top-color:#00e5ff;border-radius:50%;animation:pspin .8s linear infinite;margin-top:.18rem"></div>' : '<div style="margin-top:.08rem">ℹ️</div>'}
+      <div style="font-size:.82rem;line-height:1.45;color:rgba(255,255,255,.9)">${message}</div>
+    </div>
+  `;
+  wrap.appendChild(card);
+  document.body.appendChild(wrap);
+  if (!document.getElementById('pGlobalPopupAnim')) {
+    const st = document.createElement('style');
+    st.id = 'pGlobalPopupAnim';
+    st.textContent = '@keyframes pspin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(st);
+  }
+  const closeBtn = document.getElementById('pGlobalPopupClose');
+  if (closeBtn) closeBtn.onclick = pClosePopup;
+  wrap.onclick = (e) => { if (e.target === wrap) pClosePopup(); };
+  if (autoCloseMs > 0) setTimeout(pClosePopup, autoCloseMs);
+}
 
 /* ════ HOSPITAL ════ */
 async function hospReg() {
@@ -1537,9 +1580,9 @@ async function hospReg() {
     const r = await pReq('POST','/api/hospitals/register',{name:n,email:e,password:p,
       username:pv('hRU')||null,
       country:pv('hRCo'),city:pv('hRCi'),phone:pv('hRPh'),registration_no:pv('hRReg'),address:pv('hRAddr')});
-    ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
-    pMsg('hRegMsg','ok',`✅ Registered! Hospital code: ${r.system_id} — Save this and give it to your robot operator.`);
-    setTimeout(() => loadHospDash(), 1800);
+    pMsg('hRegMsg','ok',`✅ Registered! Hospital code: ${r.system_id}. Wait for admin approval, then sign in with email/username/phone + password.`);
+    pPopup('Registration Submitted', `Hospital code: ${r.system_id}\n\nYour registration was submitted successfully. Please wait for admin approval, then come back and sign in with email/username/phone and your password.`, false, 7000);
+    ptab('hosp','log');
   } catch(e) { pMsg('hRegMsg','er', e.message); }
 }
 async function hospLogin() {
@@ -1551,7 +1594,12 @@ async function hospLogin() {
     const r = await pReq('POST','/api/hospitals/login',{identifier, password});
     ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
     loadHospDash();
-  } catch(e) { pMsg('hLogMsg','er', e.message); }
+  } catch(e) {
+    pMsg('hLogMsg','er', e.message);
+    if (pIsPendingErr(e.message)) {
+      pPopup('Waiting For Admin Approval', 'Checking your approval status... Please wait for admin approval. After approval, come back and sign in again.', true, 5500);
+    }
+  }
 }
 async function loadHospDash() {
   ptab('hosp','dash');
@@ -1638,7 +1686,12 @@ async function patLogin() {
     const r = await pReq('POST','/api/patients/login',{identifier, password});
     ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
     loadPatDash();
-  } catch(e) { pMsg('pLogMsg','er', e.message); }
+  } catch(e) {
+    pMsg('pLogMsg','er', e.message);
+    if (pIsPendingErr(e.message)) {
+      pPopup('Waiting For Admin Approval', 'Checking your approval status... Your account is still pending admin approval. Please try signing in again after approval.', true, 5500);
+    }
+  }
 }
 async function loadPatDash() {
   ptab('pat','dash');
@@ -1697,7 +1750,8 @@ async function pharmReg() {
       license_no:pv('phRLic'), address:pv('phRAddr'),
       license_doc_url:pv('phRLicUrl')
     });
-    pMsg('phRegMsg','ok',`✅ Registration submitted! Pharmacy code: ${r.system_id} — Save this. You can sign in after admin approval.`);
+    pMsg('phRegMsg','ok',`✅ Registration submitted! Pharmacy code: ${r.system_id}. Wait for admin approval, then sign in with email/username/phone + password.`);
+    pPopup('Registration Submitted', `Pharmacy code: ${r.system_id}\n\nRegistration completed. Please wait for admin approval, then sign in with email/username/phone and password.`, false, 7000);
   } catch(e) { pMsg('phRegMsg','er', e.message); }
 }
 async function pharmLogin() {
@@ -1709,7 +1763,12 @@ async function pharmLogin() {
     const r = await pReq('POST','/api/pharmacies/login',{identifier, password});
     ptok.pharm = r.token; localStorage.setItem('t_pharm', r.token);
     loadPharmDash();
-  } catch(e) { pMsg('phLogMsg','er', e.message); }
+  } catch(e) {
+    pMsg('phLogMsg','er', e.message);
+    if (pIsPendingErr(e.message)) {
+      pPopup('Waiting For Admin Approval', 'Checking your approval status... Your pharmacy account is pending admin approval. Please come back and sign in after approval.', true, 5500);
+    }
+  }
 }
 async function loadPharmDash() {
   ptab('pharm','dash');
@@ -1852,6 +1911,9 @@ async function signIn2() {
   } catch(e) {
     err.textContent = e.message;
     err.style.display = 'block';
+    if (pIsPendingErr(e.message)) {
+      pPopup('Waiting For Admin Approval', 'Checking your approval status... Your doctor account is pending admin approval. Please come back and sign in after approval.', true, 5500);
+    }
   }
 }
 
@@ -1879,7 +1941,9 @@ async function docRegister() {
       consultation_fee:parseFloat(pv('drFee'))||0,
       license_doc_url:pv('drLic')
     });
-    pMsg('docRegMsg','ok',`✅ Registration submitted! Your doctor code: ${r.system_id} — Save this. You can sign in after admin approval.`);
+    pMsg('docRegMsg','ok',`✅ Registration submitted! Doctor code: ${r.system_id}. Wait for admin approval, then sign in with email/username/phone + password.`);
+    pPopup('Registration Submitted', `Doctor code: ${r.system_id}\n\nYou are registered successfully. Please wait for admin approval, then come back and sign in with email/username/phone and password.`, false, 7000);
+    docPortalTab('sign');
   } catch(e) { pMsg('docRegMsg','er', e.message); }
 }
 
