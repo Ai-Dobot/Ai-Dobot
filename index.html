@@ -1906,8 +1906,12 @@ async function signIn2() {
     const selAv = document.querySelector('#avatarGrid2 .avatar-opt.selected');
     if (selAv) _selectedAvatar = selAv.dataset.emoji;
     // Mirror into original Firebase sign-in fields
-    document.getElementById('inName').value      = r?.doctor?.name || identifier;
-    document.getElementById('inSpecialty').value = r?.doctor?.specialty || 'General Physician';
+    document.getElementById('inName').value = r?.doctor?.name || identifier;
+    const specEl = document.getElementById('inSpecialty');
+    const backendSpec = (r?.doctor?.specialty || '').trim();
+    const available = Array.from(specEl.options).map(o => o.value);
+    // If backend specialty does not match dropdown options exactly, use a safe default.
+    specEl.value = available.includes(backendSpec) ? backendSpec : 'General Physician';
     document.querySelectorAll('#avatarGrid .avatar-opt').forEach(e => e.classList.remove('selected'));
     const orig = document.querySelector(`#avatarGrid .avatar-opt[data-emoji="${_selectedAvatar}"]`);
     if (orig) orig.classList.add('selected');
