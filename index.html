@@ -528,6 +528,75 @@
 <!-- ═══════════════════════════════════════════════════════
      SIGN-IN SCREEN
 ═══════════════════════════════════════════════════════ -->
+<!-- ═══ DOCTOR PORTAL TABS ════════════════════════════ -->
+<div id="doctorPortalTabs" style="display:none;padding-top:48px;background:var(--bg);min-height:100vh;align-items:center;justify-content:center;flex-direction:column">
+  <div style="width:100%;max-width:480px;padding:1.5rem">
+    <div style="text-align:center;font-size:2.5rem;margin-bottom:.3rem">🏥</div>
+    <div style="text-align:center;font-family:'Courier New',monospace;font-size:1rem;letter-spacing:.18em;color:var(--cyan);font-weight:700;margin-bottom:.2rem">AI DOBOT</div>
+    <div style="text-align:center;font-size:.72rem;color:var(--dim);font-family:monospace;letter-spacing:.1em;margin-bottom:1.5rem">DOCTOR PORTAL</div>
+
+    <div style="display:flex;background:rgba(255,255,255,.03);border-radius:8px;padding:3px;margin-bottom:1.2rem;gap:2px">
+      <div class="ptb on" id="docTabSign" onclick="docPortalTab('sign')" style="flex:1;text-align:center;padding:.42rem;border-radius:6px;cursor:pointer;font-family:monospace;font-size:.72rem;color:rgba(255,255,255,.38);letter-spacing:.08em;transition:.18s">Sign In</div>
+      <div class="ptb" id="docTabReg" onclick="docPortalTab('reg')" style="flex:1;text-align:center;padding:.42rem;border-radius:6px;cursor:pointer;font-family:monospace;font-size:.72rem;color:rgba(255,255,255,.38);letter-spacing:.08em;transition:.18s">Register</div>
+    </div>
+
+    <!-- Sign In (existing Firebase) -->
+    <div id="docPanelSign">
+      <div class="signin-box" style="box-shadow:none;border:none;padding:0;max-width:100%">
+        <span class="avatar-label">Choose your avatar</span>
+        <div class="avatar-grid" id="avatarGrid2">
+          <div class="avatar-opt selected" data-emoji="👨‍⚕️">👨‍⚕️</div>
+          <div class="avatar-opt" data-emoji="👩‍⚕️">👩‍⚕️</div>
+          <div class="avatar-opt" data-emoji="🧑‍⚕️">🧑‍⚕️</div>
+          <div class="avatar-opt" data-emoji="👨‍🔬">👨‍🔬</div>
+          <div class="avatar-opt" data-emoji="👩‍🔬">👩‍🔬</div>
+          <div class="avatar-opt" data-emoji="🩺">🩺</div>
+        </div>
+        <div class="field"><label>Full Name</label><input id="inName2" type="text" placeholder="Dr. Your Name" autocomplete="name"/></div>
+        <div class="field"><label>Specialty</label>
+          <select id="inSpecialty2">
+            <option value="">— Select specialty —</option>
+            <option>General Physician</option><option>Cardiologist</option><option>Pulmonologist</option>
+            <option>Emergency Medicine</option><option>Neurologist</option><option>Pediatrician</option>
+            <option>Dermatologist</option><option>Orthopedic Surgeon</option><option>Psychiatrist</option>
+            <option>Radiologist</option><option>Oncologist</option><option>Other</option>
+          </select>
+        </div>
+        <button class="btn-signin" id="btnSignin2" onclick="signIn2()">✅ Sign In as Doctor</button>
+        <div class="signin-err" id="signinErr2"></div>
+      </div>
+    </div>
+
+    <!-- Register (new account) -->
+    <div id="docPanelReg" style="display:none">
+      <div id="docRegMsg" class="pmsg"></div>
+      <div class="pfr">
+        <div class="pfield"><label>Full Name *</label><input id="drN" placeholder="Dr. Sarah Chen"/></div>
+        <div class="pfield"><label>Specialty *</label><input id="drS" placeholder="Cardiology"/></div>
+      </div>
+      <div class="pfield"><label>Email *</label><input id="drE" type="email" placeholder="doctor@email.com"/></div>
+      <div class="pfield"><label>Password *</label><input id="drP" type="password" placeholder="Min 8 characters"/></div>
+      <div class="pfr">
+        <div class="pfield"><label>Country</label><input id="drCo" placeholder="Nigeria"/></div>
+        <div class="pfield"><label>City</label><input id="drCi" placeholder="Lagos"/></div>
+      </div>
+      <div class="pfr">
+        <div class="pfield"><label>Phone</label><input id="drPh" placeholder="+234 801 000 0000"/></div>
+        <div class="pfield"><label>Consultation Fee ($)</label><input id="drFee" type="number" placeholder="0"/></div>
+      </div>
+      <div class="pfield"><label>Qualifications</label><input id="drQ" placeholder="MBBS, MD..."/></div>
+      <div class="pfield"><label>Short Bio</label><textarea id="drBio" placeholder="Brief professional summary..." style="resize:vertical;min-height:65px;width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.82rem;padding:.58rem .8rem;outline:none"></textarea></div>
+      <div class="pfield">
+        <label>Medical License Document URL *</label>
+        <input id="drLic" placeholder="Google Drive / Dropbox link to your license"/>
+        <div style="font-family:monospace;font-size:.62rem;color:rgba(255,179,0,.8);margin-top:.25rem">⚠ Required. Upload your license to Google Drive and paste the share link. Admin must approve before you can sign in.</div>
+      </div>
+      <button class="pbtn pc" onclick="docRegister()">Submit Registration for Approval</button>
+      <button class="pbtn out" style="margin-top:.3rem" onclick="docPortalTab('sign')">Already registered? Sign In</button>
+    </div>
+  </div>
+</div>
+
 <div id="signinScreen">
   <div class="signin-box">
     <div class="signin-logo">🏥</div>
@@ -780,6 +849,8 @@ async function signIn() {
 ════════════════════════════════════════════════════════ */
 function showDashboard() {
   document.getElementById('signinScreen').style.display = 'none';
+  const dpt = document.getElementById('doctorPortalTabs');
+  if (dpt) dpt.style.display = 'none';
   document.getElementById('dashboard').style.display    = 'flex';
 
   document.getElementById('hdrAvatar').textContent = _doctorProfile.avatar;
@@ -910,7 +981,9 @@ async function signOut() {
   localStorage.removeItem('doctorProfile');
   _doctorId = null; _doctorProfile = null;
   document.getElementById('dashboard').style.display    = 'none';
-  document.getElementById('signinScreen').style.display = 'flex';
+  const dpt = document.getElementById('doctorPortalTabs');
+  if (dpt) { dpt.style.display = 'flex'; }
+  else { document.getElementById('signinScreen').style.display = 'flex'; }
   document.getElementById('btnSignin').disabled    = false;
   document.getElementById('btnSignin').textContent = '✅ Sign In as Doctor';
 }
@@ -1119,6 +1192,12 @@ window.testCall = testCall;
    AUTO-RESTORE SESSION (if doctor was already signed in)
 ════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', async () => {
+  // Show doctor portal tabs by default (not raw signinScreen)
+  const dpt = document.getElementById('doctorPortalTabs');
+  if (dpt) {
+    document.getElementById('signinScreen').style.display = 'none';
+    dpt.style.display = 'flex';
+  }
   if (_doctorId && _doctorProfile) {
     // Pre-fill sign-in form
     document.getElementById('inName').value = _doctorProfile.name;
@@ -1290,7 +1369,12 @@ window.addEventListener('DOMContentLoaded', async () => {
       <div class="pfield"><label>License No.</label><input id="phRLic" placeholder="Pharmacy license no."/></div>
     </div>
     <div class="pfield"><label>Address</label><input id="phRAddr" placeholder="Street, Area, City"/></div>
-    <button class="pbtn pp" onclick="pharmReg()">Register Pharmacy</button>
+    <div class="pfield">
+      <label>Pharmacy License Certificate URL *</label>
+      <input id="phRLicUrl" placeholder="Google Drive / Dropbox link to your pharmacy license"/>
+      <div style="font-family:monospace;font-size:.62rem;color:rgba(255,179,0,.8);margin-top:.25rem">⚠ Required. Admin must approve before you can sign in.</div>
+    </div>
+    <button class="pbtn pp" onclick="pharmReg()">Submit Registration for Approval</button>
     <button class="pbtn out" onclick="ptab('pharm','log')">Already registered? Sign In</button>
   </div>
 
@@ -1379,29 +1463,40 @@ let pCart = [];
 
 /* ── Portal navigation ── */
 function showPortal(p) {
-  const map = {
-    doctor: ['signinScreen','dashboard'],
-    hosp:   ['hospPortal'],
-    pat:    ['patPortal'],
-    pharm:  ['pharmPortal'],
-    shop:   ['shopPortal']
-  };
   // Hide all portals
-  ['signinScreen','dashboard','hospPortal','patPortal','pharmPortal','shopPortal']
+  ['signinScreen','dashboard','doctorPortalTabs','hospPortal','patPortal','pharmPortal','shopPortal','adminPortal']
     .forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
+      if (!el) return;
+      el.style.display = 'none';
     });
-  // Show target
-  (map[p] || []).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = (id === 'dashboard') ? 'flex' : 'block';
-  });
+
+  if (p === 'doctor') {
+    // Show existing dashboard if already signed in, else show portal tabs
+    const isDashboard = document.getElementById('dashboard').style.display === 'flex';
+    if (isDashboard) {
+      document.getElementById('dashboard').style.display = 'flex';
+    } else {
+      const dpt = document.getElementById('doctorPortalTabs');
+      if (dpt) dpt.style.display = 'flex';
+      else {
+        // fallback to original signin screen
+        document.getElementById('signinScreen').style.display = 'flex';
+      }
+    }
+  } else if (p === 'admin') {
+    document.getElementById('adminPortal')?.classList.add('on');
+    document.getElementById('adminPortal').style.display = 'block';
+  } else {
+    const map = { hosp:'hospPortal', pat:'patPortal', pharm:'pharmPortal', shop:'shopPortal' };
+    const el = document.getElementById(map[p]);
+    if (el) el.style.display = 'block';
+  }
+
   // Update nav tabs
   document.querySelectorAll('.pnav-tab').forEach((t,i) => {
-    t.classList.toggle('on', ['doctor','hosp','pat','pharm','shop'][i] === p);
+    t.classList.toggle('on', ['doctor','hosp','pat','pharm','shop','admin'][i] === p);
   });
-  // Auto-load shop
   if (p === 'shop') loadShop();
 }
 
@@ -1573,13 +1668,16 @@ async function pharmReg() {
   const n=pv('phRN'),e=pv('phRE'),p=pv('phRP');
   if (!n||!e||!p) return pMsg('phRegMsg','er','Name, email and password required');
   if (p.length < 8) return pMsg('phRegMsg','er','Password must be at least 8 characters');
+  if (!pv('phRLicUrl')) return pMsg('phRegMsg','er','Please provide a link to your pharmacy license document');
   try {
-    pMsg('phRegMsg','inf','Registering…');
-    const r = await pReq('POST','/api/pharmacies/register',{name:n,email:e,password:p,
-      country:pv('phRCo'),city:pv('phRCi'),phone:pv('phRPh'),license_no:pv('phRLic'),address:pv('phRAddr')});
-    ptok.pharm = r.token; localStorage.setItem('t_pharm', r.token);
-    pMsg('phRegMsg','ok',`✅ Registered! System ID: ${r.system_id}`);
-    setTimeout(() => loadPharmDash(), 1800);
+    pMsg('phRegMsg','inf','Submitting registration…');
+    const r = await pReq('POST','/api/pharmacies/register',{
+      name:n, email:e, password:p,
+      country:pv('phRCo'), city:pv('phRCi'), phone:pv('phRPh'),
+      license_no:pv('phRLic'), address:pv('phRAddr'),
+      license_doc_url:pv('phRLicUrl')
+    });
+    pMsg('phRegMsg','ok',`✅ Registration submitted! System ID: ${r.system_id} — Save this. You can sign in after admin approval.`);
   } catch(e) { pMsg('phRegMsg','er', e.message); }
 }
 async function pharmLogin() {
@@ -1699,6 +1797,63 @@ async function placeOrder() {
   } catch(e) { alert(e.message); }
 }
 
+/* ── Doctor portal tab switching ── */
+function docPortalTab(which) {
+  document.getElementById('docPanelSign').style.display = which === 'sign' ? 'block' : 'none';
+  document.getElementById('docPanelReg').style.display  = which === 'reg'  ? 'block' : 'none';
+  document.getElementById('docTabSign').classList.toggle('on', which === 'sign');
+  document.getElementById('docTabReg').classList.toggle('on', which === 'reg');
+}
+
+/* signIn2 — mirrors original signIn but uses avatarGrid2 / inName2 / inSpecialty2 */
+async function signIn2() {
+  const name      = document.getElementById('inName2').value.trim();
+  const specialty = document.getElementById('inSpecialty2').value;
+  if (!name)      { document.getElementById('signinErr2').textContent='Please enter your full name.'; document.getElementById('signinErr2').style.display='block'; return; }
+  if (!specialty) { document.getElementById('signinErr2').textContent='Please select your specialty.'; document.getElementById('signinErr2').style.display='block'; return; }
+  // Mirror values into original fields so signIn() works
+  document.getElementById('inName').value = name;
+  document.getElementById('inSpecialty').value = specialty;
+  // Copy selected avatar
+  const selAv = document.querySelector('#avatarGrid2 .avatar-opt.selected');
+  if (selAv) {
+    _selectedAvatar = selAv.dataset.emoji;
+    document.querySelectorAll('#avatarGrid .avatar-opt').forEach(e => e.classList.remove('selected'));
+    const orig = document.querySelector(`#avatarGrid .avatar-opt[data-emoji="${_selectedAvatar}"]`);
+    if (orig) orig.classList.add('selected');
+  }
+  document.getElementById('signinErr2').style.display = 'none';
+  // Call original signIn
+  await signIn();
+}
+
+/* Avatar sync for avatarGrid2 */
+document.querySelectorAll('#avatarGrid2 .avatar-opt').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('#avatarGrid2 .avatar-opt').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+  });
+});
+
+/* docRegister — new registration via /api/reg_doctors/register */
+async function docRegister() {
+  const n=pv('drN'),s=pv('drS'),e=pv('drE'),p=pv('drP');
+  if (!n||!e||!p) return pMsg('docRegMsg','er','Name, email and password are required');
+  if (p.length < 8) return pMsg('docRegMsg','er','Password must be at least 8 characters');
+  if (!pv('drLic')) return pMsg('docRegMsg','er','Please provide a link to your medical license document');
+  try {
+    pMsg('docRegMsg','inf','Submitting registration…');
+    const r = await pReq('POST','/api/reg_doctors/register',{
+      name:n, specialty:s, email:e, password:p,
+      country:pv('drCo'), city:pv('drCi'), phone:pv('drPh'),
+      qualifications:pv('drQ'), bio:pv('drBio'),
+      consultation_fee:parseFloat(pv('drFee'))||0,
+      license_doc_url:pv('drLic')
+    });
+    pMsg('docRegMsg','ok',`✅ Registration submitted! Your System ID: ${r.system_id} — Save this. You can sign in after admin approval.`);
+  } catch(e) { pMsg('docRegMsg','er', e.message); }
+}
+
 /* ── Auto-restore portal sessions ── */
 window.addEventListener('DOMContentLoaded', () => {
   const th = localStorage.getItem('t_hosp');
@@ -1707,6 +1862,203 @@ window.addEventListener('DOMContentLoaded', () => {
   if (th) { ptok.hosp = th; }
   if (tp) { ptok.pat = tp; }
   if (tph) { ptok.pharm = tph; }
+});
+</script>
+
+<!-- ═══ ADMIN PORTAL ═══════════════════════════════════ -->
+<div id="adminPortal" class="portal-pg">
+<div class="prw">
+  <div class="prh" style="color:#ffb300">&#9881; Admin Portal — Owner Access</div>
+
+  <!-- Login -->
+  <div id="adminLogin" style="max-width:380px;margin:0 auto">
+    <div id="adminLoginMsg" class="pmsg"></div>
+    <div class="pfield"><label>Admin Password</label><input id="adminPw" type="password" placeholder="Enter admin password"/></div>
+    <button class="pbtn pa" onclick="adminLogin()">Login as Admin</button>
+  </div>
+
+  <!-- Dashboard (hidden until logged in) -->
+  <div id="adminDash" style="display:none">
+    <div class="pstats" id="adminStats"></div>
+
+    <!-- Tabs -->
+    <div class="ptabs" style="max-width:600px">
+      <div class="ptb on" onclick="adminTab('docs')">&#128104;&#8205;&#9877;&#65039; Doctors</div>
+      <div class="ptb" onclick="adminTab('pharms')">&#128138; Pharmacies</div>
+      <div class="ptb" onclick="adminTab('hosps')">&#127973;&#65039; Hospitals</div>
+      <div class="ptb" onclick="adminTab('pats')">&#129489; Patients</div>
+    </div>
+
+    <!-- Doctors pending -->
+    <div id="adminDocs" class="ptp on">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between">PENDING DOCTOR REGISTRATIONS
+          <button onclick="loadAdminData()" style="background:none;border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">&#8635; Refresh</button>
+        </div>
+        <div id="adminDocsList"><div class="pspin"></div></div>
+      </div>
+    </div>
+
+    <!-- Pharmacies -->
+    <div id="adminPharms" class="ptp">
+      <div class="card">
+        <div class="card-title">PHARMACY REGISTRATIONS</div>
+        <div id="adminPharmsList"><div class="pspin"></div></div>
+      </div>
+    </div>
+
+    <!-- Hospitals -->
+    <div id="adminHosps" class="ptp">
+      <div class="card">
+        <div class="card-title">HOSPITAL REGISTRATIONS</div>
+        <div id="adminHospsList"><div class="pspin"></div></div>
+      </div>
+    </div>
+
+    <!-- Patients -->
+    <div id="adminPats" class="ptp">
+      <div class="card">
+        <div class="card-title">ALL PATIENTS</div>
+        <div id="adminPatsList"><div class="pspin"></div></div>
+      </div>
+    </div>
+
+    <button class="pbtn out" onclick="adminLogout()" style="max-width:160px;margin-top:1rem">Logout</button>
+  </div>
+</div></div>
+
+<script>
+'use strict';
+let adminTok = localStorage.getItem('t_admin') || null;
+
+async function adminLogin() {
+  const pw = pv('adminPw');
+  if (!pw) return;
+  try {
+    pMsg('adminLoginMsg','inf','Logging in…');
+    const r = await pReq('POST','/api/admin/login',{password:pw});
+    adminTok = r.token;
+    localStorage.setItem('t_admin', adminTok);
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminDash').style.display  = 'block';
+    loadAdminData();
+  } catch(e) { pMsg('adminLoginMsg','er', e.message); }
+}
+
+function adminLogout() {
+  adminTok = null; localStorage.removeItem('t_admin');
+  document.getElementById('adminDash').style.display  = 'none';
+  document.getElementById('adminLogin').style.display = 'block';
+}
+
+function adminTab(which) {
+  ['docs','pharms','hosps','pats'].forEach(t => {
+    document.getElementById('admin' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.remove('on');
+  });
+  document.getElementById('admin' + which.charAt(0).toUpperCase() + which.slice(1))?.classList.add('on');
+  document.querySelectorAll('#adminPortal .ptb').forEach((t,i) => {
+    t.classList.toggle('on', ['docs','pharms','hosps','pats'][i] === which);
+  });
+}
+
+async function loadAdminData() {
+  if (!adminTok) return;
+  try {
+    // Load stats
+    const stats = await pReq('GET','/api/admin/stats',null,adminTok);
+    document.getElementById('adminStats').innerHTML = `
+      <div class="pstat"><div class="pstat-v" style="color:#00e5ff">${(stats.doctors.pending||0)}</div><div class="pstat-l">Doctors Pending</div></div>
+      <div class="pstat"><div class="pstat-v" style="color:#00e676">${(stats.doctors.approved||0)}</div><div class="pstat-l">Doctors Approved</div></div>
+      <div class="pstat"><div class="pstat-v" style="color:#c084ff">${(stats.pharmacies.pending||0)}</div><div class="pstat-l">Pharmacies Pending</div></div>
+      <div class="pstat"><div class="pstat-v" style="color:#ffb300">${stats.hospitals||0}</div><div class="pstat-l">Hospitals</div></div>
+      <div class="pstat"><div class="pstat-v" style="color:#00e5ff">${stats.patients||0}</div><div class="pstat-l">Patients</div></div>`;
+
+    // Load all data
+    const data = await pReq('GET','/api/admin/pending',null,adminTok);
+
+    // Doctors
+    const dl = document.getElementById('adminDocsList');
+    if (!data.doctors?.length) { dl.innerHTML='<div class="pempty">No pending doctor registrations.</div>'; }
+    else { dl.innerHTML = data.doctors.map(d => adminCard('doctor', d, [
+      ['Name', d.name], ['Email', d.email], ['Specialty', d.specialty||'—'],
+      ['Country', d.country||'—'], ['City', d.city||'—'], ['Phone', d.phone||'—'],
+      ['Qualifications', d.qualifications||'—'],
+      d.license_doc_url ? ['License Doc', `<a href="${d.license_doc_url}" target="_blank" style="color:#00e5ff">View Document ↗</a>`] : ['License Doc', 'Not provided'],
+      ['Status', `<span class="pbadge ${d.approval_status==='approved'?'on':'off'}">${d.approval_status}</span>`],
+      ['Registered', pFmt(d.created_at)]
+    ])).join(''); }
+
+    // Pharmacies
+    const pl = document.getElementById('adminPharmsList');
+    if (!data.pharmacies?.length) { pl.innerHTML='<div class="pempty">No pharmacy registrations.</div>'; }
+    else { pl.innerHTML = data.pharmacies.map(p => adminCard('pharmacy', p, [
+      ['Name', p.name], ['Email', p.email], ['Country', p.country||'—'],
+      ['City', p.city||'—'], ['Phone', p.phone||'—'], ['License No', p.license_no||'—'],
+      p.license_doc_url ? ['License Doc', `<a href="${p.license_doc_url}" target="_blank" style="color:#00e5ff">View Document ↗</a>`] : ['License Doc', 'Not provided'],
+      ['Status', `<span class="pbadge ${p.approval_status==='approved'?'on':'off'}">${p.approval_status}</span>`],
+      ['Registered', pFmt(p.created_at)]
+    ])).join(''); }
+
+    // Hospitals
+    const hl = document.getElementById('adminHospsList');
+    if (!data.hospitals?.length) { hl.innerHTML='<div class="pempty">No hospital registrations.</div>'; }
+    else { hl.innerHTML = data.hospitals.map(h => adminCard('hospital', h, [
+      ['Name', h.name], ['Email', h.email], ['Country', h.country||'—'],
+      ['City', h.city||'—'], ['Phone', h.phone||'—'], ['Reg No', h.registration_no||'—'],
+      ['Status', `<span class="pbadge ${h.approval_status==='approved'?'on':'off'}">${h.approval_status}</span>`],
+      ['Registered', pFmt(h.created_at)]
+    ])).join(''); }
+
+    // Patients
+    const patl = document.getElementById('adminPatsList');
+    if (!data.patients?.length) { patl.innerHTML='<div class="pempty">No patients yet.</div>'; }
+    else { patl.innerHTML = data.patients.map(p => `
+      <div class="prec" style="margin-bottom:.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-weight:600">${p.name||'—'}</span> <span style="font-family:monospace;font-size:.72rem;color:rgba(0,229,255,.7)">${p.system_id}</span></div>
+          <span style="font-size:.72rem;color:rgba(255,255,255,.38)">${pFmt(p.created_at)}</span>
+        </div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);margin-top:.3rem">${p.email||'—'} · ${p.country||'—'}</div>
+      </div>`).join(''); }
+
+  } catch(e) { console.error(e); }
+}
+
+function adminCard(type, entity, fields) {
+  const isPending = entity.approval_status === 'pending';
+  return `<div class="prec" style="margin-bottom:.75rem">
+    <table class="ptable" style="margin-bottom:.6rem">
+      ${fields.map(([k,v]) => `<tr><td style="color:rgba(255,255,255,.38);min-width:120px;font-family:monospace;font-size:.7rem">${k}</td><td>${v}</td></tr>`).join('')}
+    </table>
+    ${isPending ? `
+      <div style="display:flex;gap:.5rem;margin-top:.4rem">
+        <button onclick="adminApprove('${type}',${entity.id},'approved')"
+          style="background:rgba(0,200,80,.14);border:1px solid rgba(0,200,80,.4);color:#00e676;font-family:monospace;font-size:.72rem;padding:.38rem 1rem;border-radius:6px;cursor:pointer">
+          ✅ Approve
+        </button>
+        <button onclick="adminApprove('${type}',${entity.id},'rejected')"
+          style="background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.35);color:#ff4444;font-family:monospace;font-size:.72rem;padding:.38rem 1rem;border-radius:6px;cursor:pointer">
+          ❌ Reject
+        </button>
+      </div>` : ''}
+  </div>`;
+}
+
+async function adminApprove(type, id, action) {
+  if (!confirm(`${action === 'approved' ? 'Approve' : 'Reject'} this ${type}?`)) return;
+  try {
+    const r = await pReq('POST','/api/admin/approve',{type,id,action},adminTok);
+    alert(r.message);
+    loadAdminData();
+  } catch(e) { alert(e.message); }
+}
+
+// Auto-restore admin session
+window.addEventListener('DOMContentLoaded', () => {
+  if (adminTok) {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminDash').style.display  = 'block';
+  }
 });
 </script>
 </body>
