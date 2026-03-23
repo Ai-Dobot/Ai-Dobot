@@ -1367,9 +1367,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     <div class="pfield"><label>Username (optional)</label><input id="phRU" placeholder="healthfirst"/></div>
     <div class="pfield"><label>Password *</label><input id="phRP" type="password" placeholder="Min 8 characters"/></div>
     <div class="pfr">
-      <div class="pfield"><label>Country</label><input id="phRCo" placeholder="Kenya"/></div>
-      <div class="pfield"><label>City</label><input id="phRCi" placeholder="Nairobi"/></div>
+      <div class="pfield"><label>Country *</label>
+        <select id="phRCoSel" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
+          <option value="">Loading countries…</option>
+        </select>
+      </div>
+      <div class="pfield"><label>Region / state *</label>
+        <select id="phRRegSel" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
+          <option value="">Select country first…</option>
+        </select>
+      </div>
     </div>
+    <div class="pfield"><label>City (local area)</label><input id="phRCi" placeholder="e.g. Nairobi, Westlands"/></div>
     <div class="pfr">
       <div class="pfield"><label>Phone</label><input id="phRPh" placeholder="+254 700 000 000"/></div>
       <div class="pfield"><label>License No.</label><input id="phRLic" placeholder="Pharmacy license no."/></div>
@@ -1400,6 +1409,21 @@ window.addEventListener('DOMContentLoaded', async () => {
       <div class="pstat"><div class="pstat-v" id="phMedCnt" style="color:#c084ff">0</div><div class="pstat-l">Medicines Listed</div></div>
     </div>
     <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">📍 Your shop location</div>
+      <p style="font-size:.72rem;color:rgba(255,255,255,.45);margin-bottom:.6rem">Customers only see your medicines when their country and region match. Update if you relocate.</p>
+      <div id="phLocMsg" class="pmsg"></div>
+      <div class="pfr">
+        <div class="pfield"><label>Country</label>
+          <select id="phDashCoSel" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"><option value="">…</option></select>
+        </div>
+        <div class="pfield"><label>Region</label>
+          <select id="phDashRegSel" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"><option value="">…</option></select>
+        </div>
+      </div>
+      <div class="pfield"><label>City</label><input id="phDashCi" placeholder="City / district"/></div>
+      <button type="button" class="pbtn pp" onclick="savePharmLocation()" style="margin-top:.55rem;max-width:220px">Save location</button>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
       <div class="card-title">ADD MEDICINE</div>
       <div id="addMedMsg" class="pmsg"></div>
       <div class="pfr">
@@ -1408,13 +1432,20 @@ window.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="pfr">
         <div class="pfield"><label>Category</label><input id="mCat" placeholder="Pain Relief"/></div>
+        <div class="pfield"><label>Diagnosis / indication</label><input id="mDiag" placeholder="e.g. headache, fever, allergy"/></div>
+      </div>
+      <div class="pfr">
         <div class="pfield"><label>Dosage</label><input id="mDos" placeholder="500mg twice daily"/></div>
+        <div class="pfield"><label>Medicine photo</label><input type="file" id="mImg" accept="image/*" onchange="previewMedImg(this)" style="font-size:.72rem"/></div>
+      </div>
+      <div id="mImgPreview" style="display:none;margin:.4rem 0">
+        <img id="mImgPrevEl" alt="preview" style="max-height:140px;border-radius:8px;border:1px solid rgba(0,200,255,.2)"/>
       </div>
       <div class="pfr">
         <div class="pfield"><label>Price ($) *</label><input id="mPr" type="number" step="0.01" placeholder="0.00"/></div>
         <div class="pfield"><label>Stock *</label><input id="mSt" type="number" placeholder="100"/></div>
       </div>
-      <div class="pfield"><label>Description</label><textarea id="mDesc" placeholder="What this medicine treats..."></textarea></div>
+      <div class="pfield"><label>Description</label><textarea id="mDesc" placeholder="Details for customers…"></textarea></div>
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem">
         <input type="checkbox" id="mRx" style="width:auto">
         <label for="mRx" style="font-family:monospace;font-size:.75rem;color:rgba(255,255,255,.7)">Requires prescription</label>
@@ -1435,14 +1466,19 @@ window.addEventListener('DOMContentLoaded', async () => {
 <div id="shopPortal" class="portal-pg">
 <div class="prw">
   <div class="prh">🛒 Medicine Shop</div>
-  <div style="display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap">
-    <input id="shopQ" placeholder="🔍 Search medicine..." oninput="loadShop()" style="flex:1;min-width:140px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
+  <div style="display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap;align-items:center">
+    <select id="shopCoSel" onchange="onShopCountryChange()" style="min-width:170px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
+      <option value="">🌍 Country…</option>
+    </select>
+    <select id="shopRegSel" onchange="loadShop()" style="min-width:170px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
+      <option value="">📍 Region…</option>
+    </select>
+    <input id="shopQ" placeholder="🔍 Search medicine…" oninput="loadShop()" style="flex:1;min-width:140px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
     <select id="shopCat" onchange="loadShop()" style="background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
       <option value="">All Categories</option>
       <option>Pain Relief</option><option>Antibiotics</option><option>Vitamins</option>
       <option>Diabetes</option><option>Heart</option><option>Skin</option><option>Other</option>
     </select>
-    <input id="shopCo" placeholder="🌍 Country" oninput="loadShop()" style="width:130px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
   </div>
   <div class="shop-grid" id="shopGrid"><div class="pspin"></div></div>
 </div>
@@ -1455,8 +1491,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     <div class="modal-hd"><div class="modal-title">🛒 CART</div><button class="modal-cls" onclick="closeCart()">✕</button></div>
     <div id="cartItems"></div>
     <div id="cartTotal" style="font-family:monospace;font-size:1rem;font-weight:700;color:#ffb300;margin:.8rem 0"></div>
-    <div class="pfield"><label>Delivery Address</label><textarea id="deliveryAddr" placeholder="Your delivery address..."></textarea></div>
-    <button class="pbtn pp" onclick="placeOrder()">Place Order</button>
+    <div class="pfield"><label>Your name</label><input id="custName" placeholder="Full name"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Email</label><input id="custEmail" type="email" placeholder="order updates"/></div>
+      <div class="pfield"><label>Phone</label><input id="custPhone" placeholder="+ country code & number"/></div>
+    </div>
+    <div class="pfield"><label>Delivery address</label><textarea id="deliveryAddr" placeholder="Street, city, landmarks…"></textarea></div>
+    <div style="font-family:monospace;font-size:.68rem;color:rgba(255,179,0,.9);padding:.65rem;border:1px dashed rgba(255,179,0,.35);border-radius:8px;margin:.5rem 0;line-height:1.5">
+      💳 <b>Online payment</b> — slot reserved for card / mobile money. Orders are saved as <code style="color:#ffb300">pending_payment</code> until you connect a provider.
+    </div>
+    <button class="pbtn pp" onclick="placeOrder()">Place order (pay later)</button>
   </div>
 </div>
 
@@ -1503,7 +1547,7 @@ function showPortal(p) {
   document.querySelectorAll('.pnav-tab').forEach((t,i) => {
     t.classList.toggle('on', ['doctor','hosp','pat','pharm','shop','admin'][i] === p);
   });
-  if (p === 'shop') loadShop();
+  if (p === 'shop') { loadShopFiltersOnce().then(() => loadShop()); }
 }
 
 /* ── Sub-tabs ── */
@@ -1516,6 +1560,7 @@ function ptab(portal, which) {
   const tabs = { hosp: ['reg','log','dash'], pat: ['setup','log','dash'], pharm: ['reg','log','dash'] };
   const allTabs = document.querySelectorAll(`#${portal}Portal .ptb`);
   allTabs.forEach((t, i) => t.classList.toggle('on', (tabs[portal]||[])[i] === which));
+  if (portal === 'pharm' && which === 'reg') setTimeout(() => initPharmRegCountries(), 0);
 }
 
 /* ── API helper ── */
@@ -1526,6 +1571,98 @@ async function pReq(method, path, body, token) {
   const d = await r.json();
   if (!r.ok) throw new Error(d.detail || d.message || `Error ${r.status}`);
   return d;
+}
+async function pReqFormData(method, path, formData, token) {
+  const h = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(PAPI + path, { method, headers: h, body: formData });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || d.message || `Error ${r.status}`);
+  return d;
+}
+let _countriesCache = null;
+async function fetchCountriesList() {
+  if (_countriesCache && _countriesCache.length) return _countriesCache;
+  const d = await pReq('GET', '/api/shop/locations/countries', null, null);
+  _countriesCache = d.countries || [];
+  return _countriesCache;
+}
+function fillSelectOptions(sel, items, placeholder) {
+  if (!sel) return;
+  sel.innerHTML = '';
+  const ph = document.createElement('option');
+  ph.value = '';
+  ph.textContent = placeholder;
+  sel.appendChild(ph);
+  (items || []).forEach(x => {
+    const o = document.createElement('option');
+    o.value = x;
+    o.textContent = x;
+    sel.appendChild(o);
+  });
+}
+async function loadRegionsIntoSelect(selectEl, country) {
+  if (!selectEl) return;
+  if (!country) {
+    fillSelectOptions(selectEl, [], 'Select country first…');
+    return;
+  }
+  selectEl.innerHTML = '<option value="">Loading regions…</option>';
+  try {
+    const d = await pReq('POST', '/api/shop/locations/states', { country }, null);
+    const list = d.states && d.states.length ? d.states : ['Nationwide'];
+    fillSelectOptions(selectEl, list, 'Select region…');
+  } catch (e) {
+    fillSelectOptions(selectEl, ['Nationwide'], 'Select region…');
+  }
+}
+async function initPharmRegCountries() {
+  const co = document.getElementById('phRCoSel');
+  const reg = document.getElementById('phRRegSel');
+  if (!co || co.dataset.ready === '1') return;
+  try {
+    const countries = await fetchCountriesList();
+    fillSelectOptions(co, countries, 'Select country…');
+    co.dataset.ready = '1';
+    co.onchange = () => loadRegionsIntoSelect(reg, co.value);
+  } catch (e) {
+    co.innerHTML = '<option value="">Could not load countries</option>';
+  }
+}
+async function initPharmDashLocation(me) {
+  const co = document.getElementById('phDashCoSel');
+  const reg = document.getElementById('phDashRegSel');
+  const ci = document.getElementById('phDashCi');
+  if (!co) return;
+  try {
+    const countries = await fetchCountriesList();
+    fillSelectOptions(co, countries, 'Select country…');
+    if (me && me.country) co.value = me.country;
+    await loadRegionsIntoSelect(reg, co.value || (me && me.country) || '');
+    if (me && me.region && reg) {
+      let ok = false;
+      Array.from(reg.options).forEach(o => { if (o.value === me.region) ok = true; });
+      if (!ok && me.region) {
+        const o = document.createElement('option');
+        o.value = me.region;
+        o.textContent = me.region;
+        reg.appendChild(o);
+      }
+      reg.value = me.region || '';
+    }
+    if (ci && me && me.city) ci.value = me.city;
+    co.onchange = () => loadRegionsIntoSelect(reg, co.value);
+  } catch (e) {}
+}
+function previewMedImg(inp) {
+  const wrap = document.getElementById('mImgPreview');
+  const img = document.getElementById('mImgPrevEl');
+  if (!inp || !inp.files || !inp.files[0]) {
+    if (wrap) wrap.style.display = 'none';
+    return;
+  }
+  if (img) img.src = URL.createObjectURL(inp.files[0]);
+  if (wrap) wrap.style.display = 'block';
 }
 function pv(id) { return document.getElementById(id)?.value || ''; }
 function psv(id, v) { const e = document.getElementById(id); if (e && v != null) e.value = v; }
@@ -1756,10 +1893,11 @@ async function pharmReg() {
   if (!pv('phRLicUrl')) return pMsg('phRegMsg','er','Please provide a link to your pharmacy license document');
   try {
     pMsg('phRegMsg','inf','Submitting registration…');
+    if (!pv('phRCoSel') || !pv('phRRegSel')) return pMsg('phRegMsg','er','Please select country and region / state.');
     const r = await pReq('POST','/api/pharmacies/register',{
       name:n, email:e, password:p,
       username:pv('phRU')||null,
-      country:pv('phRCo'), city:pv('phRCi'), phone:pv('phRPh'),
+      country:pv('phRCoSel'), region:pv('phRRegSel'), city:pv('phRCi'), phone:pv('phRPh'),
       license_no:pv('phRLic'), address:pv('phRAddr'),
       license_doc_url:pv('phRLicUrl')
     });
@@ -1789,19 +1927,47 @@ async function loadPharmDash() {
   try {
     const me = await pReq('GET','/api/pharmacies/me',null,ptok.pharm);
     document.getElementById('phSysId').textContent = me.system_id;
+    await initPharmDashLocation(me);
     loadMyMeds();
   } catch(e) {}
+}
+async function savePharmLocation() {
+  try {
+    pMsg('phLocMsg','inf','Saving…');
+    await pReq('PATCH','/api/pharmacies/location',{
+      country: pv('phDashCoSel'),
+      region: pv('phDashRegSel'),
+      city: pv('phDashCi'),
+    }, ptok.pharm);
+    pMsg('phLocMsg','ok','Location saved. Customers will see your medicines for this country & region.');
+  } catch(e) { pMsg('phLocMsg','er', e.message); }
 }
 async function addMedicine() {
   const n=pv('mN'),pr=parseFloat(pv('mPr')),st=parseInt(pv('mSt'));
   if (!n||isNaN(pr)) return pMsg('addMedMsg','er','Name and price required');
   try {
     pMsg('addMedMsg','inf','Adding…');
-    await pReq('POST','/api/pharmacies/medicines',{name:n,brand:pv('mBr'),category:pv('mCat'),
-      dosage:pv('mDos'),description:pv('mDesc'),price:pr,stock:st||0,
-      requires_prescription:document.getElementById('mRx')?.checked||false},ptok.pharm);
+    let imageUrl = null;
+    const fin = document.getElementById('mImg');
+    if (fin && fin.files && fin.files[0]) {
+      pMsg('addMedMsg','inf','Uploading image to Cloudinary…');
+      const fd = new FormData();
+      fd.append('file', fin.files[0]);
+      const up = await pReqFormData('POST','/api/pharmacies/medicine-image', fd, ptok.pharm);
+      imageUrl = up.url || null;
+    }
+    await pReq('POST','/api/pharmacies/medicines',{
+      name:n, brand:pv('mBr'), category:pv('mCat'),
+      diagnosis: pv('mDiag') || null,
+      dosage:pv('mDos'), description:pv('mDesc'), price:pr, stock:st||0,
+      requires_prescription:document.getElementById('mRx')?.checked||false,
+      image_url: imageUrl,
+    },ptok.pharm);
     pMsg('addMedMsg','ok','Medicine added!');
-    ['mN','mBr','mCat','mDos','mDesc','mPr','mSt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    ['mN','mBr','mCat','mDiag','mDos','mDesc','mPr','mSt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    if (fin) fin.value = '';
+    const prev = document.getElementById('mImgPreview');
+    if (prev) prev.style.display = 'none';
     loadMyMeds();
   } catch(e) { pMsg('addMedMsg','er', e.message); }
 }
@@ -1813,8 +1979,9 @@ async function loadMyMeds() {
     document.getElementById('phMedCnt').textContent = meds.length;
     if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines yet. Add one above.</div>'; return; }
     el.innerHTML = `<table class="ptable"><thead><tr>
-      <th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Rx</th><th></th>
+      <th></th><th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Rx</th><th></th>
     </tr></thead><tbody>${meds.map(m=>`<tr>
+      <td style="width:52px">${m.image_url ? `<img src="${String(m.image_url).replace(/"/g,'&quot;')}" style="width:44px;height:44px;object-fit:cover;border-radius:6px"/>` : '💊'}</td>
       <td style="font-weight:600">${m.name}</td>
       <td style="color:rgba(255,255,255,.38)">${m.brand||'—'}</td>
       <td>${m.category||'—'}</td>
@@ -1833,21 +2000,53 @@ async function delMed(id) {
 function pharmLogout() { ptok.pharm=null; localStorage.removeItem('t_pharm'); ptab('pharm','reg'); document.getElementById('pharmDashTab').style.display='none'; }
 
 /* ════ SHOP ════ */
+let _shopFiltersReady = false;
+async function loadShopFiltersOnce() {
+  if (_shopFiltersReady) return;
+  const co = document.getElementById('shopCoSel');
+  if (!co) return;
+  try {
+    const countries = await fetchCountriesList();
+    fillSelectOptions(co, countries, 'Country…');
+    co.addEventListener('change', onShopCountryChange);
+    _shopFiltersReady = true;
+  } catch (e) {
+    co.innerHTML = '<option value="">Could not load countries</option>';
+  }
+}
+async function onShopCountryChange() {
+  const co = document.getElementById('shopCoSel');
+  const reg = document.getElementById('shopRegSel');
+  await loadRegionsIntoSelect(reg, co && co.value);
+  loadShop();
+}
 async function loadShop() {
   const el = document.getElementById('shopGrid'); el.innerHTML = '<div class="pspin"></div>';
+  const co = pv('shopCoSel');
+  const reg = pv('shopRegSel');
+  if (!co) {
+    el.innerHTML = '<div class="pempty">Select your <b>country</b> and <b>region</b> to see medicines available in your area.</div>';
+    return;
+  }
+  if (!reg) {
+    el.innerHTML = '<div class="pempty">Select a region to continue.</div>';
+    return;
+  }
   try {
-    const r = await pReq('GET',`/api/shop/medicines?search=${encodeURIComponent(pv('shopQ'))}&category=${encodeURIComponent(pv('shopCat'))}&country=${encodeURIComponent(pv('shopCo'))}&page=1`);
+    const r = await pReq('GET',`/api/shop/medicines?search=${encodeURIComponent(pv('shopQ'))}&category=${encodeURIComponent(pv('shopCat'))}&country=${encodeURIComponent(co)}&region=${encodeURIComponent(reg)}&page=1`, null, null);
     const meds = r.medicines || [];
-    if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines found.</div>'; return; }
+    if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines in this area yet. Try another region or check back soon.</div>'; return; }
     el.innerHTML = meds.map(m => `
       <div class="smc">
+        ${m.image_url ? `<div style="width:100%;height:130px;border-radius:10px;overflow:hidden;margin-bottom:.5rem;background:rgba(0,0,0,.35)"><img src="${String(m.image_url).replace(/"/g,'&quot;')}" alt="" style="width:100%;height:100%;object-fit:cover"/></div>` : '<div style="height:130px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:.5rem">💊</div>'}
         <div class="smn">${m.name}${m.requires_prescription?' <span style="color:#ff4444;font-size:.65rem">Rx</span>':''}</div>
         <div class="smb">${m.brand||''} ${m.category?'· '+m.category:''}</div>
+        ${m.diagnosis?`<div style="font-size:.65rem;color:rgba(0,229,255,.55);margin:.2rem 0">${String(m.diagnosis).slice(0,80)}${String(m.diagnosis).length>80?'…':''}</div>`:''}
         ${m.dosage?`<div style="font-size:.68rem;color:rgba(255,255,255,.38);margin-bottom:.4rem">${m.dosage}</div>`:''}
         <div class="smp">$${m.price}</div>
-        <div class="sms">📍 ${m.pharmacy_name} · ${m.pharmacy_city||''}</div>
+        <div class="sms">📍 ${m.pharmacy_name} · ${m.pharmacy_region||''} ${m.pharmacy_city? '· '+m.pharmacy_city : ''}</div>
         <div class="sms">Stock: ${m.stock}</div>
-        <button onclick='sAddCart(${JSON.stringify({id:m.id,name:m.name,price:m.price,pharmacy_id:m.pharmacy_id,pharmacy_name:m.pharmacy_name})})' style="display:block;width:100%;margin-top:.6rem;padding:.38rem;background:linear-gradient(135deg,#c084ff,#7c4dff);border:none;border-radius:6px;color:#fff;font-family:monospace;font-size:.72rem;cursor:pointer">Add to Cart</button>
+        <button onclick='sAddCart(${JSON.stringify({id:m.id,name:m.name,price:Number(m.price),pharmacy_id:m.pharmacy_id,pharmacy_name:m.pharmacy_name,image_url:m.image_url||null})})' style="display:block;width:100%;margin-top:.6rem;padding:.38rem;background:linear-gradient(135deg,#c084ff,#7c4dff);border:none;border-radius:6px;color:#fff;font-family:monospace;font-size:.72rem;cursor:pointer">Add to Cart</button>
       </div>`).join('');
   } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
 }
@@ -1883,12 +2082,15 @@ async function placeOrder() {
   if (!pCart.length) return alert('Cart is empty');
   try {
     const r = await pReq('POST','/api/shop/order',{
-      items: pCart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty,pharmacy_id:i.pharmacy_id})),
-      delivery_address: pv('deliveryAddr')
+      items: pCart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty,pharmacy_id:i.pharmacy_id,image_url:i.image_url||null})),
+      delivery_address: pv('deliveryAddr'),
+      customer_name: pv('custName'),
+      customer_email: pv('custEmail'),
+      customer_phone: pv('custPhone'),
     }, ptok.pat || null);
     pCart = []; document.getElementById('cartCnt').textContent = '0';
     closeCart();
-    alert(`Order #${r.order_id} placed! Total: $${r.total}`);
+    alert(`Order #${r.order_id} saved. Total: $${Number(r.total).toFixed(2)}\nPayment: ${r.payment_status || 'pending'} — you can add online payment later.`);
   } catch(e) { alert(e.message); }
 }
 
