@@ -735,6 +735,7 @@ let _msg       = null;
 let _jitsi     = null;
 let _doctorId  = localStorage.getItem('doctorId')  || null;
 let _doctorProfile = JSON.parse(localStorage.getItem('doctorProfile') || 'null');
+let _doctorMetaForPresence = null;
 let _selectedAvatar = '👨‍⚕️';
 let _heartbeatTimer = null;
 
@@ -821,6 +822,12 @@ async function signIn() {
       avatar:    _selectedAvatar,
       token:     fcmToken,
       doctor_id: _doctorId || undefined,
+      country: _doctorMetaForPresence?.country || null,
+      city: _doctorMetaForPresence?.city || null,
+      phone: _doctorMetaForPresence?.phone || null,
+      hospital_name: _doctorMetaForPresence?.hospital_name || null,
+      hospital_registration_no: _doctorMetaForPresence?.hospital_registration_no || null,
+      is_private: !!_doctorMetaForPresence ? !_doctorMetaForPresence?.hospital_name : true,
     };
     const resp = await fetch(`${BACKEND}/api/doctor/signin`, {
       method:  'POST',
@@ -1261,24 +1268,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   <div id="hosp-dash" class="ptp">
     <div class="pstats">
       <div class="pstat"><div class="pstat-v" id="hSysId" style="font-size:.9rem;color:#ffb300">—</div><div class="pstat-l">Hospital Code (for robot)</div></div>
-      <div class="pstat"><div class="pstat-v" id="hDocCnt">0</div><div class="pstat-l">Total Doctors</div></div>
-      <div class="pstat"><div class="pstat-v" id="hOnCnt" style="color:#00e676">0</div><div class="pstat-l">Online Now</div></div>
+      <div class="pstat"><div class="pstat-v" id="hCallCnt" style="color:#00e5ff">0</div><div class="pstat-l">Incoming Calls</div></div>
+      <div class="pstat"><div class="pstat-v" id="hLastCall" style="color:#00e676;font-size:.75rem">—</div><div class="pstat-l">Last Update</div></div>
     </div>
     <div class="card" style="margin-bottom:1rem">
-      <div class="card-title">ADD DOCTOR BY CODE</div>
-      <div id="hAddMsg" class="pmsg"></div>
-      <p style="font-family:monospace;font-size:.7rem;color:rgba(255,255,255,.38);margin-bottom:.8rem">
-        Enter a doctor's code (e.g. <span style="color:#00e5ff">DOC-XXXXXXXX</span>) to add them to your hospital.</p>
-      <div style="display:flex;gap:.5rem">
-        <input id="hAddId" placeholder="DOC-XXXXXXXX" style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
-        <button onclick="hAddDoc()" style="background:rgba(0,230,118,.14);border:1px solid rgba(0,230,118,.4);color:#00e676;font-family:monospace;font-size:.75rem;padding:.5rem 1rem;border-radius:7px;cursor:pointer">Add</button>
+      <div class="card-title" style="display:flex;justify-content:space-between">HOSPITAL INCOMING CALLS
+        <button onclick="loadHospCalls()" style="background:none;border:1px solid rgba(0,200,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">↺ Refresh</button>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between">YOUR DOCTORS
-        <button onclick="loadHDocs()" style="background:none;border:1px solid rgba(0,200,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">↺ Refresh</button>
-      </div>
-      <div id="hospDocs"><div class="pspin"></div></div>
+      <div id="hospCalls"><div class="pspin"></div></div>
     </div>
     <button class="pbtn out" onclick="hospLogout()" style="max-width:160px;margin-top:.5rem">Sign Out</button>
   </div>
@@ -1609,50 +1606,53 @@ async function loadHospDash() {
   try {
     const me = await pReq('GET','/api/hospitals/me',null,ptok.hosp);
     document.getElementById('hSysId').textContent = me.system_id;
-    loadHDocs();
+    loadHospCalls();
+    if (window._hospCallTimer) clearInterval(window._hospCallTimer);
+    window._hospCallTimer = setInterval(loadHospCalls, 4000);
   } catch(e) {}
 }
-async function loadHDocs() {
-  const el = document.getElementById('hospDocs'); el.innerHTML = '<div class="pspin"></div>';
+async function loadHospCalls() {
+  const el = document.getElementById('hospCalls'); el.innerHTML = '<div class="pspin"></div>';
   try {
-    const r = await pReq('GET','/api/hospitals/doctors',null,ptok.hosp);
-    const docs = r.doctors || [];
-    document.getElementById('hDocCnt').textContent = docs.length;
-    document.getElementById('hOnCnt').textContent  = docs.filter(d => d.is_online).length;
-    if (!docs.length) { el.innerHTML = '<div class="pempty">No doctors yet. Add one above.</div>'; return; }
-    el.innerHTML = `<div class="pdg">${docs.map(d=>`
-      <div class="pdc"><div class="pdct"><div class="pdav">${d.avatar||'👨‍⚕️'}</div>
-        <div><div class="pdn">Dr. ${d.name}</div><div class="pdsp">${d.specialty||'General'}</div></div>
-      </div>
-      <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
-        ${d.city?`<span style="font-family:monospace;font-size:.65rem;color:rgba(255,255,255,.38)">📍${d.city}</span>`:''}
-        <span class="pbadge ${d.is_online?'on':'off'}">${d.is_online?'● Online':'○ Offline'}</span>
-      </div>
-      <div style="margin-top:.6rem">
-        <button class="pbsm" onclick="hRemDoc('${d.system_id}')">Remove</button>
-      </div>
-    </div>`).join('')}</div>`;
+    const r = await pReq('GET','/api/hospitals/calls/pending',null,ptok.hosp);
+    const calls = r.calls || [];
+    document.getElementById('hCallCnt').textContent = calls.length;
+    document.getElementById('hLastCall').textContent = new Date().toLocaleTimeString();
+    if (!calls.length) { el.innerHTML = '<div class="pempty">No incoming calls right now.</div>'; return; }
+    el.innerHTML = `<div class="pdg">${calls.map(c=>`
+      <div class="pdc">
+        <div class="pdct"><div class="pdav">🏥</div>
+          <div><div class="pdn">${c.patient_name || 'Patient'}</div><div class="pdsp">${c.patient_id || '—'}</div></div>
+        </div>
+        <div style="font-size:.74rem;color:rgba(255,255,255,.75);margin:.45rem 0">${c.symptom || 'General health check'}</div>
+        <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+          <span class="pbadge on">● Incoming</span>
+          <span style="font-family:monospace;font-size:.65rem;color:rgba(255,255,255,.4)">${pFmt((c.created_at||0)*1000)}</span>
+        </div>
+        <div style="margin-top:.65rem;display:flex;gap:.45rem">
+          <button class="pbsm" onclick="hospJoinCall('${c.id}','${c.video_call_url || ''}')">Join Call</button>
+          <button class="pbsm" onclick="hospDismissCall('${c.id}')">Dismiss</button>
+        </div>
+      </div>`).join('')}</div>`;
   } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
 }
-async function hAddDoc() {
-  const sid = pv('hAddId').trim().toUpperCase();
-  if (!sid) return pMsg('hAddMsg','er','Enter a doctor code');
+async function hospJoinCall(pendingId, url) {
   try {
-    pMsg('hAddMsg','inf','Adding…');
-    const r = await pReq('POST','/api/hospitals/add-doctor',{doctor_system_id:sid},ptok.hosp);
-    pMsg('hAddMsg','ok', r.message);
-    document.getElementById('hAddId').value = '';
-    loadHDocs();
-  } catch(e) { pMsg('hAddMsg','er', e.message); }
-}
-async function hRemDoc(sid) {
-  if (!confirm('Remove this doctor from your hospital?')) return;
-  try {
-    await pReq('POST','/api/hospitals/remove-doctor',{doctor_system_id:sid},ptok.hosp);
-    loadHDocs();
+    await pReq('DELETE',`/api/hospitals/calls/pending/${pendingId}`,null,ptok.hosp);
+    if (url) window.open(url, '_blank');
+    loadHospCalls();
   } catch(e) { alert(e.message); }
 }
-function hospLogout() { ptok.hosp=null; localStorage.removeItem('t_hosp'); ptab('hosp','reg'); document.getElementById('hospDashTab').style.display='none'; }
+async function hospDismissCall(pendingId) {
+  try {
+    await pReq('DELETE',`/api/hospitals/calls/pending/${pendingId}`,null,ptok.hosp);
+    loadHospCalls();
+  } catch(e) { alert(e.message); }
+}
+function hospLogout() {
+  if (window._hospCallTimer) { clearInterval(window._hospCallTimer); window._hospCallTimer = null; }
+  ptok.hosp=null; localStorage.removeItem('t_hosp'); ptab('hosp','reg'); document.getElementById('hospDashTab').style.display='none';
+}
 
 /* ════ PATIENT ════ */
 async function patSetup() {
@@ -1902,6 +1902,13 @@ async function signIn2() {
   // Look up doctor by identifier/password to get profile and specialty
   try {
     const r = await pReq('POST','/api/reg_doctors/login',{ identifier, password });
+    _doctorMetaForPresence = {
+      country: r?.doctor?.country || null,
+      city: r?.doctor?.city || null,
+      phone: r?.doctor?.phone || null,
+      hospital_name: r?.doctor?.hospital_name || null,
+      hospital_registration_no: r?.doctor?.hospital_registration_no || null,
+    };
     // Store profile for Firebase sign-in
     const selAv = document.querySelector('#avatarGrid2 .avatar-opt.selected');
     if (selAv) _selectedAvatar = selAv.dataset.emoji;
