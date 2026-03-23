@@ -1616,6 +1616,8 @@ async function loadHospCalls() {
   try {
     const r = await pReq('GET','/api/hospitals/calls/pending',null,ptok.hosp);
     const calls = r.calls || [];
+    window._hospCallStore = {};
+    calls.forEach(c => { window._hospCallStore[c.id] = c; });
     document.getElementById('hCallCnt').textContent = calls.length;
     document.getElementById('hLastCall').textContent = new Date().toLocaleTimeString();
     if (!calls.length) { el.innerHTML = '<div class="pempty">No incoming calls right now.</div>'; return; }
@@ -1630,16 +1632,25 @@ async function loadHospCalls() {
           <span style="font-family:monospace;font-size:.65rem;color:rgba(255,255,255,.4)">${pFmt((c.created_at||0)*1000)}</span>
         </div>
         <div style="margin-top:.65rem;display:flex;gap:.45rem">
-          <button class="pbsm" onclick="hospJoinCall('${c.id}','${c.video_call_url || ''}')">Join Call</button>
+          <button class="pbsm" onclick="hospJoinCall('${c.id}')">Join Call</button>
           <button class="pbsm" onclick="hospDismissCall('${c.id}')">Dismiss</button>
         </div>
       </div>`).join('')}</div>`;
   } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
 }
-async function hospJoinCall(pendingId, url) {
+async function hospJoinCall(pendingId) {
   try {
+    const c = (window._hospCallStore || {})[pendingId] || {};
     await pReq('DELETE',`/api/hospitals/calls/pending/${pendingId}`,null,ptok.hosp);
-    if (url) window.open(url, '_blank');
+    if (c.video_call_url) {
+      // Reuse the exact same popup video flow used by doctors.
+      startVideo(c.video_call_url, {
+        patient_name: c.patient_name || 'Patient',
+        patient_id: c.patient_id || '--',
+        symptom: c.symptom || '--',
+        timestamp: new Date().toISOString(),
+      });
+    }
     loadHospCalls();
   } catch(e) { alert(e.message); }
 }
