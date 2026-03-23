@@ -1252,15 +1252,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Dashboard -->
   <div id="hosp-dash" class="ptp">
     <div class="pstats">
-      <div class="pstat"><div class="pstat-v" id="hSysId" style="font-size:.9rem;color:#ffb300">—</div><div class="pstat-l">System ID (give to robot)</div></div>
+      <div class="pstat"><div class="pstat-v" id="hSysId" style="font-size:.9rem;color:#ffb300">—</div><div class="pstat-l">Hospital Code (for robot)</div></div>
       <div class="pstat"><div class="pstat-v" id="hDocCnt">0</div><div class="pstat-l">Total Doctors</div></div>
       <div class="pstat"><div class="pstat-v" id="hOnCnt" style="color:#00e676">0</div><div class="pstat-l">Online Now</div></div>
     </div>
     <div class="card" style="margin-bottom:1rem">
-      <div class="card-title">ADD DOCTOR BY SYSTEM ID</div>
+      <div class="card-title">ADD DOCTOR BY CODE</div>
       <div id="hAddMsg" class="pmsg"></div>
       <p style="font-family:monospace;font-size:.7rem;color:rgba(255,255,255,.38);margin-bottom:.8rem">
-        Enter a doctor's System ID (e.g. <span style="color:#00e5ff">DOC-XXXXXXXX</span>) to add them to your hospital.</p>
+        Enter a doctor's code (e.g. <span style="color:#00e5ff">DOC-XXXXXXXX</span>) to add them to your hospital.</p>
       <div style="display:flex;gap:.5rem">
         <input id="hAddId" placeholder="DOC-XXXXXXXX" style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
         <button onclick="hAddDoc()" style="background:rgba(0,230,118,.14);border:1px solid rgba(0,230,118,.4);color:#00e676;font-family:monospace;font-size:.75rem;padding:.5rem 1rem;border-radius:7px;cursor:pointer">Add</button>
@@ -1289,8 +1289,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Setup -->
   <div id="pat-setup" class="ptp on">
     <div id="pSetMsg" class="pmsg"></div>
-    <div class="pinfo">💡 After your Q&amp;A session with the robot, you receive a <strong>System ID</strong> like <strong>USR-XXXXXXXX</strong>. Enter it below to activate your account and view all your health records.</div>
-    <div class="pfield"><label>System ID *</label><input id="pSId" placeholder="USR-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
+    <div class="pinfo">💡 After your Q&amp;A session with the robot, you receive an <strong>Account Code</strong> like <strong>USR-XXXXXXXX</strong>. Enter it below to activate your account and view all your health records.</div>
+    <div class="pfield"><label>Account Code *</label><input id="pSId" placeholder="USR-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
     <div class="pfr">
       <div class="pfield"><label>Create Password *</label><input id="pSP" type="password" placeholder="New password"/></div>
       <div class="pfield"><label>Confirm Password *</label><input id="pSP2" type="password" placeholder="Repeat password"/></div>
@@ -1312,7 +1312,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   <div id="pat-log" class="ptp">
     <div id="pLogMsg" class="pmsg"></div>
     <div class="pfield"><label>Email / Username / Phone</label><input id="pLIdent" placeholder="you@email.com or your_username or +1..."/>
-      <div style="font-size:.65rem;color:rgba(255,255,255,.38);margin-top:.25rem;font-family:monospace">You can still use your System ID here if needed.</div>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.38);margin-top:.25rem;font-family:monospace">You can also use your account code here if needed.</div>
     </div>
     <div class="pfield"><label>Password</label><input id="pLPwd" type="password" placeholder="Your password"/></div>
     <button class="pbtn pa" onclick="patLogin()">Sign In</button>
@@ -1322,7 +1322,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Dashboard -->
   <div id="pat-dash" class="ptp">
     <div class="pstats">
-      <div class="pstat"><div class="pstat-v" id="pSysId" style="font-size:.85rem;color:#00e5ff">—</div><div class="pstat-l">System ID</div></div>
+      <div class="pstat"><div class="pstat-v" id="pSysId" style="font-size:.85rem;color:#00e5ff">—</div><div class="pstat-l">Account Code</div></div>
       <div class="pstat"><div class="pstat-v" id="pVisits" style="color:#ffb300">0</div><div class="pstat-l">Total Visits</div></div>
     </div>
     <div class="card" style="margin-bottom:1rem">
@@ -1391,7 +1391,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   <!-- Dashboard -->
   <div id="pharm-dash" class="ptp">
     <div class="pstats">
-      <div class="pstat"><div class="pstat-v" id="phSysId" style="font-size:.85rem;color:#ffb300">—</div><div class="pstat-l">System ID</div></div>
+      <div class="pstat"><div class="pstat-v" id="phSysId" style="font-size:.85rem;color:#ffb300">—</div><div class="pstat-l">Pharmacy Code</div></div>
       <div class="pstat"><div class="pstat-v" id="phMedCnt" style="color:#c084ff">0</div><div class="pstat-l">Medicines Listed</div></div>
     </div>
     <div class="card" style="margin-bottom:1rem">
@@ -1538,7 +1538,7 @@ async function hospReg() {
       username:pv('hRU')||null,
       country:pv('hRCo'),city:pv('hRCi'),phone:pv('hRPh'),registration_no:pv('hRReg'),address:pv('hRAddr')});
     ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
-    pMsg('hRegMsg','ok',`✅ Registered! System ID: ${r.system_id} — Save this, give it to your robot operator.`);
+    pMsg('hRegMsg','ok',`✅ Registered! Hospital code: ${r.system_id} — Save this and give it to your robot operator.`);
     setTimeout(() => loadHospDash(), 1800);
   } catch(e) { pMsg('hRegMsg','er', e.message); }
 }
@@ -1586,7 +1586,7 @@ async function loadHDocs() {
 }
 async function hAddDoc() {
   const sid = pv('hAddId').trim().toUpperCase();
-  if (!sid) return pMsg('hAddMsg','er','Enter a doctor System ID');
+  if (!sid) return pMsg('hAddMsg','er','Enter a doctor code');
   try {
     pMsg('hAddMsg','inf','Adding…');
     const r = await pReq('POST','/api/hospitals/add-doctor',{doctor_system_id:sid},ptok.hosp);
@@ -1607,7 +1607,7 @@ function hospLogout() { ptok.hosp=null; localStorage.removeItem('t_hosp'); ptab(
 /* ════ PATIENT ════ */
 async function patSetup() {
   const sid=pv('pSId').trim().toUpperCase(), p=pv('pSP'), p2=pv('pSP2');
-  if (!sid) return pMsg('pSetMsg','er','Enter your System ID from the robot session');
+  if (!sid) return pMsg('pSetMsg','er','Enter your account code from the robot session');
   if (p !== p2) return pMsg('pSetMsg','er','Passwords do not match');
   if (p.length < 6) return pMsg('pSetMsg','er','Password must be at least 6 characters');
   try {
@@ -1651,7 +1651,7 @@ async function loadPatDash() {
 }
 async function setPersonalDoc() {
   const sid = pv('pdocId').trim().toUpperCase();
-  if (!sid) return pMsg('pdocMsg','er','Enter a doctor System ID');
+  if (!sid) return pMsg('pdocMsg','er','Enter a doctor code');
   try {
     pMsg('pdocMsg','inf','Setting…');
     const r = await pReq('POST','/api/patients/set-personal-doctor',{doctor_system_id:sid},ptok.pat);
@@ -1697,7 +1697,7 @@ async function pharmReg() {
       license_no:pv('phRLic'), address:pv('phRAddr'),
       license_doc_url:pv('phRLicUrl')
     });
-    pMsg('phRegMsg','ok',`✅ Registration submitted! System ID: ${r.system_id} — Save this. You can sign in after admin approval.`);
+    pMsg('phRegMsg','ok',`✅ Registration submitted! Pharmacy code: ${r.system_id} — Save this. You can sign in after admin approval.`);
   } catch(e) { pMsg('phRegMsg','er', e.message); }
 }
 async function pharmLogin() {
@@ -1879,7 +1879,7 @@ async function docRegister() {
       consultation_fee:parseFloat(pv('drFee'))||0,
       license_doc_url:pv('drLic')
     });
-    pMsg('docRegMsg','ok',`✅ Registration submitted! Your System ID: ${r.system_id} — Save this. You can sign in after admin approval.`);
+    pMsg('docRegMsg','ok',`✅ Registration submitted! Your doctor code: ${r.system_id} — Save this. You can sign in after admin approval.`);
   } catch(e) { pMsg('docRegMsg','er', e.message); }
 }
 
