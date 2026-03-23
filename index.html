@@ -1398,6 +1398,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     <div id="phLogMsg" class="pmsg"></div>
     <div class="pfield"><label>Email / Username / Phone</label><input id="phLIdent" placeholder="pharmacy@email.com or healthfirst or +254..."/></div>
     <div class="pfield"><label>Password</label><input id="phLPwd" type="password" placeholder="Your password"/></div>
+    <p style="font-family:monospace;font-size:.62rem;color:rgba(0,229,255,.45);margin:.35rem 0 .6rem;line-height:1.4">Demo sample (delete later): <b>Boxing Pharmacy</b> — email <code style="color:#ffb300">boxing.demo@sample-delete.local</code> password <code style="color:#ffb300">SampleBoxing2024!</code> · shop: United States → California</p>
     <button class="pbtn pp" onclick="pharmLogin()">Sign In</button>
     <button class="pbtn out" onclick="ptab('pharm','reg')">New pharmacy? Register</button>
   </div>
@@ -1477,7 +1478,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     <select id="shopCat" onchange="loadShop()" style="background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
       <option value="">All Categories</option>
       <option>Pain Relief</option><option>Antibiotics</option><option>Vitamins</option>
-      <option>Diabetes</option><option>Heart</option><option>Skin</option><option>Other</option>
+      <option>Diabetes</option><option>Heart</option><option>Skin</option><option>Cold &amp; Flu</option><option>Other</option>
     </select>
   </div>
   <div class="shop-grid" id="shopGrid"><div class="pspin"></div></div>
@@ -1504,12 +1505,54 @@ window.addEventListener('DOMContentLoaded', async () => {
   </div>
 </div>
 
+<!-- ADMIN: pharmacy products -->
+<div class="modal-bg" id="adminPharmMedsModal" onclick="if(event.target===this)adminClosePharmMeds()">
+  <div class="modal-box" style="max-width:min(92vw,760px);max-height:88vh;overflow:auto" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <div class="modal-title" id="adminPharmMedsTitle">Pharmacy products</div>
+      <button type="button" class="modal-cls" onclick="adminClosePharmMeds()">✕</button>
+    </div>
+    <div id="adminPharmMedsBody" style="padding-top:.5rem"></div>
+  </div>
+</div>
+
+<!-- PHARMACY: edit medicine -->
+<div class="modal-bg" id="medEditModal" onclick="if(event.target===this)document.getElementById('medEditModal').classList.remove('on')">
+  <div class="modal-box" style="max-width:min(92vw,520px);max-height:88vh;overflow:auto" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <div class="modal-title">Edit medicine</div>
+      <button type="button" class="modal-cls" onclick="document.getElementById('medEditModal').classList.remove('on')">✕</button>
+    </div>
+    <input type="hidden" id="medEditId"/>
+    <div class="pfield"><label>Name *</label><input id="meName"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Brand</label><input id="meBrand"/></div>
+      <div class="pfield"><label>Category</label><input id="meCat"/></div>
+    </div>
+    <div class="pfield"><label>Diagnosis / indication</label><input id="meDiag"/></div>
+    <div class="pfield"><label>Dosage</label><input id="meDos"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Price</label><input id="mePr" type="number" step="0.01"/></div>
+      <div class="pfield"><label>Stock</label><input id="meSt" type="number"/></div>
+    </div>
+    <div class="pfield"><label>Description</label><textarea id="meDesc" rows="2"></textarea></div>
+    <div class="pfield"><label>Image URL (optional)</label><input id="meImgUrl" placeholder="https://…"/></div>
+    <div class="pfield"><label>New photo upload</label><input type="file" id="meImg" accept="image/*" style="font-size:.72rem"/></div>
+    <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0">
+      <input type="checkbox" id="meRx" style="width:auto"/>
+      <label for="meRx" style="font-family:monospace;font-size:.75rem;color:rgba(255,255,255,.7)">Requires prescription</label>
+    </div>
+    <button type="button" class="pbtn pp" onclick="saveMedEdit()">Save changes</button>
+  </div>
+</div>
+
 <!-- ═══ PORTAL JS ════════════════════════════════════════ -->
 <script>
 'use strict';
 const PAPI = 'https://backend-jzw7.onrender.com';
 const ptok = { hosp:null, pat:null, pharm:null };
 let pCart = [];
+let _pharmMedsCache = [];
 
 /* ── Portal navigation ── */
 function showPortal(p) {
@@ -1976,6 +2019,7 @@ async function loadMyMeds() {
   try {
     const r = await pReq('GET','/api/pharmacies/medicines',null,ptok.pharm);
     const meds = r.medicines || [];
+    _pharmMedsCache = meds;
     document.getElementById('phMedCnt').textContent = meds.length;
     if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines yet. Add one above.</div>'; return; }
     el.innerHTML = `<table class="ptable"><thead><tr>
@@ -1988,9 +2032,59 @@ async function loadMyMeds() {
       <td style="font-family:monospace;color:#ffb300">$${m.price}</td>
       <td>${m.stock}</td>
       <td>${m.requires_prescription?'✅':'—'}</td>
-      <td><button class="pbsm" onclick="delMed(${m.id})">Delete</button></td>
+      <td style="white-space:nowrap"><button class="pbsm" onclick="openMedEdit(${m.id})" style="margin-right:.25rem">Edit</button><button class="pbsm" onclick="delMed(${m.id})">Delete</button></td>
     </tr>`).join('')}</tbody></table>`;
   } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
+}
+function openMedEdit(id) {
+  const m = _pharmMedsCache.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('medEditId').value = m.id;
+  document.getElementById('meName').value = m.name || '';
+  document.getElementById('meBrand').value = m.brand || '';
+  document.getElementById('meCat').value = m.category || '';
+  document.getElementById('meDiag').value = m.diagnosis || '';
+  document.getElementById('meDos').value = m.dosage || '';
+  document.getElementById('mePr').value = m.price != null ? m.price : '';
+  document.getElementById('meSt').value = m.stock != null ? m.stock : '';
+  document.getElementById('meDesc').value = m.description || '';
+  document.getElementById('meImgUrl').value = m.image_url || '';
+  document.getElementById('meRx').checked = !!m.requires_prescription;
+  const fi = document.getElementById('meImg');
+  if (fi) fi.value = '';
+  document.getElementById('medEditModal').classList.add('on');
+}
+async function saveMedEdit() {
+  const id = parseInt(document.getElementById('medEditId').value, 10);
+  if (!id) return;
+  try {
+    let imageUrl = (document.getElementById('meImgUrl').value || '').trim() || null;
+    const fin = document.getElementById('meImg');
+    if (fin && fin.files && fin.files[0]) {
+      const fd = new FormData();
+      fd.append('file', fin.files[0]);
+      const up = await pReqFormData('POST','/api/pharmacies/medicine-image', fd, ptok.pharm);
+      imageUrl = up.url || imageUrl;
+    }
+    const body = {
+      name: document.getElementById('meName').value.trim(),
+      brand: document.getElementById('meBrand').value.trim() || null,
+      category: document.getElementById('meCat').value.trim() || null,
+      diagnosis: document.getElementById('meDiag').value.trim() || null,
+      dosage: document.getElementById('meDos').value.trim() || null,
+      description: document.getElementById('meDesc').value.trim() || null,
+      price: parseFloat(document.getElementById('mePr').value),
+      stock: parseInt(document.getElementById('meSt').value, 10),
+      requires_prescription: document.getElementById('meRx').checked,
+      image_url: imageUrl,
+    };
+    if (!body.name) return alert('Name required');
+    if (isNaN(body.price)) return alert('Valid price required');
+    if (isNaN(body.stock)) body.stock = 0;
+    await pReq('PUT', `/api/pharmacies/medicines/${id}`, body, ptok.pharm);
+    document.getElementById('medEditModal').classList.remove('on');
+    loadMyMeds();
+  } catch (e) { alert(e.message); }
 }
 async function delMed(id) {
   if (!confirm('Delete this medicine?')) return;
@@ -2320,11 +2414,12 @@ async function loadAdminData() {
     const pl = document.getElementById('adminPharmsList');
     if (!data.pharmacies?.length) { pl.innerHTML='<div class="pempty">No pharmacy registrations.</div>'; }
     else { pl.innerHTML = data.pharmacies.map(p => adminCard('pharmacy', p, [
-      ['Name', p.name], ['Email', p.email], ['Country', p.country||'—'],
-      ['City', p.city||'—'], ['Phone', p.phone||'—'], ['License No', p.license_no||'—'],
+      ['Name', p.name], ['Email', p.email], ['Code', p.system_id||'—'],
+      ['Country', p.country||'—'], ['Region', p.region||'—'], ['City', p.city||'—'], ['Phone', p.phone||'—'], ['License No', p.license_no||'—'],
       p.license_doc_url ? ['License Doc', `<a href="${p.license_doc_url}" target="_blank" style="color:#00e5ff">View Document ↗</a>`] : ['License Doc', 'Not provided'],
       ['Status', `<span class="pbadge ${p.approval_status==='approved'?'on':'off'}">${p.approval_status}</span>`],
-      ['Registered', pFmt(p.created_at)]
+      ['Registered', pFmt(p.created_at)],
+      ['Shop products', `<button type="button" onclick="adminShowPharmMeds(${p.id})" style="background:rgba(192,132,255,.2);border:1px solid rgba(192,132,255,.45);color:#e9d5ff;font-family:monospace;font-size:.72rem;padding:.4rem .9rem;border-radius:6px;cursor:pointer">View / delete products</button>`],
     ])).join(''); }
 
     // Hospitals
@@ -2389,6 +2484,50 @@ async function adminApprove(type, id, action) {
     alert(r.message);
     loadAdminData();
   } catch(e) { alert(e.message); }
+}
+
+function adminClosePharmMeds() {
+  document.getElementById('adminPharmMedsModal')?.classList.remove('on');
+}
+async function adminShowPharmMeds(pharmacyId) {
+  const modal = document.getElementById('adminPharmMedsModal');
+  const body = document.getElementById('adminPharmMedsBody');
+  const title = document.getElementById('adminPharmMedsTitle');
+  if (!modal || !body) return;
+  modal.dataset.openPharmacyId = String(pharmacyId);
+  modal.classList.add('on');
+  body.innerHTML = '<div class="pspin"></div>';
+  try {
+    const r = await pReq('GET', `/api/admin/pharmacies/${pharmacyId}/medicines`, null, adminTok);
+    const ph = r.pharmacy || {};
+    const meds = r.medicines || [];
+    if (title) title.textContent = `Products — ${ph.name || 'Pharmacy'} (${meds.length})`;
+    if (!meds.length) {
+      body.innerHTML = '<div class="pempty">No medicines listed for this pharmacy.</div>';
+      return;
+    }
+    body.innerHTML = `<div style="display:flex;flex-direction:column;gap:.65rem">${meds.map(m => `
+      <div class="prec" style="display:flex;gap:.75rem;align-items:flex-start;margin:0">
+        ${m.image_url ? `<img src="${String(m.image_url).replace(/"/g,'&quot;')}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0"/>` : '<div style="width:64px;height:64px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">💊</div>'}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.85rem">${String(m.name||'').replace(/</g,'&lt;')}</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.45);font-family:monospace">${String(m.brand||'')} · ${String(m.category||'')} · $${m.price} · stock ${m.stock}</div>
+          ${m.diagnosis ? `<div style="font-size:.65rem;color:rgba(0,229,255,.5);margin-top:.2rem">${String(m.diagnosis).slice(0,120).replace(/</g,'&lt;')}</div>` : ''}
+        </div>
+        <button type="button" onclick="adminDeleteMedicine(${m.id})" style="flex-shrink:0;background:rgba(255,60,60,.15);border:1px solid rgba(255,60,60,.4);color:#ff8a8a;font-family:monospace;font-size:.65rem;padding:.35rem .55rem;border-radius:6px;cursor:pointer">Delete</button>
+      </div>`).join('')}</div>`;
+  } catch (e) {
+    body.innerHTML = `<div class="pempty">${e.message}</div>`;
+  }
+}
+async function adminDeleteMedicine(medId) {
+  if (!confirm('Delete this product from the catalog?')) return;
+  try {
+    await pReq('DELETE', `/api/admin/medicines/${medId}`, null, adminTok);
+    const openPid = document.getElementById('adminPharmMedsModal')?.dataset?.openPharmacyId;
+    if (openPid) await adminShowPharmMeds(parseInt(openPid, 10));
+    loadAdminData();
+  } catch (e) { alert(e.message); }
 }
 
 // Auto-restore admin session
