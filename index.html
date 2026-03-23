@@ -356,9 +356,174 @@
       background:rgba(255,179,0,.06); border-left:3px solid var(--amber); border-radius:4px;
       padding:.38rem .6rem; font-size:.7rem; line-height:1.6; color:rgba(255,180,0,.88); margin-top:.3rem;
     }
+
+    /* ─── PORTAL NAVIGATION ─────────────────────────── */
+    #portalNav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(7,9,15,.97); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,200,255,.14);
+      display: flex; align-items: center; padding: 0 1.2rem; height: 48px; gap: .3rem;
+    }
+    .pnav-logo { font-size: 1.1rem; font-family: monospace; font-weight: 700;
+      color: #00e5ff; letter-spacing: .1em; margin-right: .5rem; white-space: nowrap; }
+    .pnav-tab {
+      background: none; border: 1px solid transparent; color: rgba(255,255,255,.38);
+      font-family: monospace; font-size: .67rem; letter-spacing: .1em;
+      padding: .28rem .75rem; border-radius: 6px; cursor: pointer; transition: .18s; white-space: nowrap;
+    }
+    .pnav-tab:hover { color: #00e5ff; border-color: rgba(0,229,255,.25); }
+    .pnav-tab.on { color: #00e5ff; border-color: rgba(0,229,255,.4);
+      background: rgba(0,229,255,.07); }
+    /* push content below nav */
+    #signinScreen, #dashboard { padding-top: 48px; }
+
+    /* ─── PORTAL PAGES ───────────────────────────────── */
+    .portal-pg { display: none; min-height: 100vh; padding-top: 68px; }
+    .portal-pg.on { display: block; }
+    .prw { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .prh { font-family: monospace; font-size: .6rem; letter-spacing: .2em;
+      color: #00e5ff; text-transform: uppercase; margin-bottom: 1.4rem; }
+    .ptabs { display: flex; background: rgba(255,255,255,.03); border-radius: 8px;
+      padding: 3px; margin-bottom: 1.2rem; gap: 2px; max-width: 340px; }
+    .ptb { flex: 1; text-align: center; padding: .42rem; border-radius: 6px;
+      cursor: pointer; font-family: monospace; font-size: .72rem; color: rgba(255,255,255,.38);
+      letter-spacing: .08em; transition: .18s; }
+    .ptb.on { background: rgba(0,229,255,.15); color: #00e5ff; font-weight: 700; }
+    .ptp { display: none; } .ptp.on { display: block; }
+    .pfield { margin-bottom: .85rem; }
+    .pfield label { display: block; font-family: monospace; font-size: .58rem;
+      letter-spacing: .16em; color: rgba(0,229,255,.7); text-transform: uppercase; margin-bottom: .3rem; }
+    .pfield input, .pfield select, .pfield textarea {
+      width: 100%; background: rgba(0,0,0,.4); border: 1px solid rgba(0,200,255,.14);
+      border-radius: 7px; color: rgba(255,255,255,.88); font-family: monospace;
+      font-size: .82rem; padding: .58rem .8rem; outline: none; transition: .2s; }
+    .pfield input:focus, .pfield select:focus, .pfield textarea:focus {
+      border-color: #00e5ff; background: rgba(0,229,255,.04); }
+    .pfield textarea { resize: vertical; min-height: 65px; }
+    .pfield select option { background: #111827; }
+    .pfr { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-bottom: .85rem; }
+    .pbtn { display: block; width: 100%; padding: .65rem; border-radius: 8px; border: none;
+      cursor: pointer; font-family: monospace; font-size: .82rem; font-weight: 700;
+      letter-spacing: .1em; transition: .2s; margin-top: .4rem; }
+    .pbtn:hover { opacity: .85; transform: translateY(-1px); }
+    .pbtn.pc { background: linear-gradient(135deg,#00e5ff,#0088bb); color: #000; }
+    .pbtn.pg { background: linear-gradient(135deg,#00e676,#00956b); color: #000; }
+    .pbtn.pa { background: linear-gradient(135deg,#ffb300,#e65c00); color: #000; }
+    .pbtn.pp { background: linear-gradient(135deg,#c084ff,#7c4dff); color: #000; }
+    .pbtn.out { background: none; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.38); }
+    .pbtn.out:hover { border-color: #00e5ff; color: #00e5ff; }
+    .pmsg { padding: .6rem .85rem; border-radius: 7px; font-family: monospace;
+      font-size: .72rem; margin-bottom: .85rem; display: none; line-height: 1.55; }
+    .pmsg.ok { display: block; background: rgba(0,230,118,.08);
+      border: 1px solid rgba(0,230,118,.3); color: #00e676; }
+    .pmsg.er { display: block; background: rgba(255,68,68,.08);
+      border: 1px solid rgba(255,68,68,.3); color: #ff4444; }
+    .pmsg.inf { display: block; background: rgba(0,229,255,.06);
+      border: 1px solid rgba(0,229,255,.2); color: #00e5ff; }
+    .pinfo { background: rgba(0,150,255,.06); border: 1px solid rgba(0,150,255,.18);
+      border-left: 3px solid #00e5ff; border-radius: 7px; padding: .7rem .9rem;
+      font-size: .74rem; line-height: 1.7; color: rgba(255,255,255,.55); margin-bottom: 1rem; }
+    .pinfo strong { color: #00e5ff; }
+    .psid { background: rgba(0,229,255,.06); border: 1px solid rgba(0,229,255,.2);
+      border-radius: 9px; padding: .85rem; text-align: center; margin-bottom: 1rem; }
+    .psid-lbl { font-family: monospace; font-size: .58rem; color: rgba(255,255,255,.38);
+      text-transform: uppercase; letter-spacing: .12em; margin-bottom: .3rem; }
+    .psid-val { font-family: 'Courier New', monospace; font-size: 1.3rem;
+      font-weight: 700; color: #00e5ff; letter-spacing: .12em; }
+    .pspin { width: 24px; height: 24px; border: 2px solid rgba(0,200,255,.14);
+      border-top-color: #00e5ff; border-radius: 50%; animation: pspin .7s linear infinite;
+      margin: 1.5rem auto; }
+    @keyframes pspin { to { transform: rotate(360deg); } }
+    .pempty { text-align: center; padding: 2rem; color: rgba(255,255,255,.3);
+      font-family: monospace; font-size: .74rem; letter-spacing: .08em; }
+    /* stats row */
+    .pstats { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+      gap: .8rem; margin-bottom: 1.2rem; }
+    .pstat { background: #111827; border: 1px solid rgba(0,200,255,.14);
+      border-radius: 10px; padding: 1rem; }
+    .pstat-v { font-family: 'Courier New', monospace; font-size: 1.6rem;
+      font-weight: 700; color: #00e5ff; }
+    .pstat-l { font-family: monospace; font-size: .58rem; color: rgba(255,255,255,.38);
+      text-transform: uppercase; letter-spacing: .1em; margin-top: .15rem; }
+    /* records */
+    .prec { background: rgba(255,255,255,.02); border: 1px solid rgba(0,200,255,.1);
+      border-radius: 9px; padding: .9rem; margin-bottom: .6rem; }
+    .prec-h { display: flex; justify-content: space-between; margin-bottom: .6rem; font-size: .76rem; }
+    .pvrow { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .4rem; }
+    .pvc { background: rgba(0,229,255,.06); border: 1px solid rgba(0,229,255,.14);
+      border-radius: 6px; padding: .25rem .5rem; text-align: center; min-width: 56px; }
+    .pvc-v { font-family: monospace; font-size: .85rem; font-weight: 700; color: #00e5ff; }
+    .pvc-l { font-size: .55rem; color: rgba(255,255,255,.38); text-transform: uppercase; }
+    /* medicine table */
+    .ptable { width: 100%; border-collapse: collapse; }
+    .ptable th { text-align: left; font-family: monospace; font-size: .6rem; letter-spacing: .12em;
+      color: rgba(255,255,255,.38); text-transform: uppercase; padding: .5rem .65rem;
+      border-bottom: 1px solid rgba(0,200,255,.1); }
+    .ptable td { padding: .7rem .65rem; border-bottom: 1px solid rgba(255,255,255,.04);
+      font-size: .8rem; }
+    .ptable tr:last-child td { border: none; }
+    .ptable tr:hover td { background: rgba(255,255,255,.015); }
+    .pbadge { display: inline-block; padding: .15rem .45rem; border-radius: 20px;
+      font-size: .65rem; font-weight: 700; }
+    .pbadge.on { background: rgba(0,230,118,.1); color: #00e676; }
+    .pbadge.off { background: rgba(255,255,255,.05); color: rgba(255,255,255,.38); }
+    .pbsm { background: none; border: 1px solid rgba(255,60,60,.35); color: #ff4444;
+      font-family: monospace; font-size: .65rem; padding: .25rem .6rem;
+      border-radius: 5px; cursor: pointer; transition: .18s; }
+    .pbsm:hover { background: rgba(255,60,60,.12); }
+    /* doctor grid */
+    .pdg { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: .75rem; }
+    .pdc { background: rgba(255,255,255,.025); border: 1px solid rgba(0,200,255,.1);
+      border-radius: 9px; padding: .9rem; transition: .18s; }
+    .pdc:hover { border-color: rgba(0,229,255,.3); }
+    .pdct { display: flex; align-items: center; gap: .6rem; margin-bottom: .65rem; }
+    .pdav { font-size: 1.5rem; }
+    .pdn { font-weight: 600; font-size: .85rem; }
+    .pdsp { color: rgba(255,255,255,.38); font-size: .7rem; font-family: monospace; }
+    /* shop grid */
+    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: .75rem; }
+    .smc { background: rgba(255,255,255,.025); border: 1px solid rgba(0,200,255,.1);
+      border-radius: 9px; padding: .9rem; transition: .18s; }
+    .smc:hover { border-color: rgba(192,132,255,.3); }
+    .smn { font-weight: 700; font-size: .88rem; margin-bottom: .2rem; }
+    .smb { color: rgba(255,255,255,.38); font-size: .72rem; margin-bottom: .45rem; }
+    .smp { font-family: monospace; font-size: 1.05rem; font-weight: 700; color: #ffb300; }
+    .sms { font-size: .68rem; color: rgba(255,255,255,.38); margin-top: .2rem; }
+    .cart-fab { position: fixed; bottom: 1.3rem; left: 1.3rem; z-index: 500;
+      background: linear-gradient(135deg,#c084ff,#7c4dff); color: #fff;
+      border: none; border-radius: 30px; padding: .65rem 1.2rem;
+      font-family: monospace; font-weight: 700; font-size: .8rem;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(124,77,255,.4); }
+    .cart-cnt { background: #fff; color: #7c4dff; border-radius: 50%;
+      width: 18px; height: 18px; font-size: .65rem; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; margin-left: .35rem; }
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      z-index: 800; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-bg.on { display: flex; }
+    .modal-box { background: #111827; border: 1px solid rgba(0,200,255,.14);
+      border-radius: 14px; width: 100%; max-width: 440px; padding: 1.6rem;
+      max-height: 88vh; overflow-y: auto; }
+    .modal-hd { display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.1rem; }
+    .modal-title { font-family: monospace; font-weight: 700; font-size: .9rem; letter-spacing: .08em; }
+    .modal-cls { background: none; border: none; color: rgba(255,255,255,.38);
+      font-size: 1.2rem; cursor: pointer; }
+    @media(max-width:600px) { .pfr { grid-template-columns: 1fr; }
+      #portalNav { padding: 0 .6rem; gap: .2rem; }
+      .pnav-tab { padding: .25rem .5rem; font-size: .6rem; } }
   </style>
 </head>
 <body>
+<!-- ═══ PORTAL NAVIGATION ═══════════════════════════════ -->
+<nav id="portalNav">
+  <div class="pnav-logo">🤖 AI DOBOT</div>
+  <button class="pnav-tab on" onclick="showPortal('doctor')">👨‍⚕️ Doctor</button>
+  <button class="pnav-tab"    onclick="showPortal('hosp')">🏥 Hospital</button>
+  <button class="pnav-tab"    onclick="showPortal('pat')">🧑 Patient</button>
+  <button class="pnav-tab"    onclick="showPortal('pharm')">💊 Pharmacy</button>
+  <button class="pnav-tab"    onclick="showPortal('shop')">🛒 Shop</button>
+</nav>
+
 
 <!-- ═══════════════════════════════════════════════════════
      SIGN-IN SCREEN
@@ -967,6 +1132,581 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Auto sign in silently
     await signIn();
   }
+});
+</script>
+
+<!-- ═══ HOSPITAL PORTAL ══════════════════════════════════ -->
+<div id="hospPortal" class="portal-pg">
+<div class="prw">
+  <div class="prh">🏥 Hospital Portal</div>
+  <div class="ptabs">
+    <div class="ptb on" onclick="ptab('hosp','reg')">Register</div>
+    <div class="ptb" onclick="ptab('hosp','log')">Sign In</div>
+    <div class="ptb" id="hospDashTab" style="display:none" onclick="ptab('hosp','dash')">Dashboard</div>
+  </div>
+
+  <!-- Register -->
+  <div id="hosp-reg" class="ptp on">
+    <div id="hRegMsg" class="pmsg"></div>
+    <div class="pfield"><label>Hospital Name *</label><input id="hRN" placeholder="City Medical Center"/></div>
+    <div class="pfield"><label>Email *</label><input id="hRE" type="email" placeholder="admin@hospital.com"/></div>
+    <div class="pfield"><label>Password *</label><input id="hRP" type="password" placeholder="Min 8 characters"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Country</label><input id="hRCo" placeholder="Nigeria"/></div>
+      <div class="pfield"><label>City</label><input id="hRCi" placeholder="Lagos"/></div>
+    </div>
+    <div class="pfr">
+      <div class="pfield"><label>Phone</label><input id="hRPh" placeholder="+234 800 000 0000"/></div>
+      <div class="pfield"><label>Registration No.</label><input id="hRReg" placeholder="Hosp reg. no."/></div>
+    </div>
+    <div class="pfield"><label>Address</label><input id="hRAddr" placeholder="Street, Area, City"/></div>
+    <button class="pbtn pg" onclick="hospReg()">Register Hospital</button>
+    <button class="pbtn out" onclick="ptab('hosp','log')">Already registered? Sign In</button>
+  </div>
+
+  <!-- Login -->
+  <div id="hosp-log" class="ptp">
+    <div id="hLogMsg" class="pmsg"></div>
+    <div class="pfield"><label>Email</label><input id="hLE" type="email"/></div>
+    <div class="pfield"><label>Password</label><input id="hLP" type="password"/></div>
+    <button class="pbtn pg" onclick="hospLogin()">Sign In</button>
+    <button class="pbtn out" onclick="ptab('hosp','reg')">New hospital? Register</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="hosp-dash" class="ptp">
+    <div class="pstats">
+      <div class="pstat"><div class="pstat-v" id="hSysId" style="font-size:.9rem;color:#ffb300">—</div><div class="pstat-l">System ID (give to robot)</div></div>
+      <div class="pstat"><div class="pstat-v" id="hDocCnt">0</div><div class="pstat-l">Total Doctors</div></div>
+      <div class="pstat"><div class="pstat-v" id="hOnCnt" style="color:#00e676">0</div><div class="pstat-l">Online Now</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">ADD DOCTOR BY SYSTEM ID</div>
+      <div id="hAddMsg" class="pmsg"></div>
+      <p style="font-family:monospace;font-size:.7rem;color:rgba(255,255,255,.38);margin-bottom:.8rem">
+        Enter a doctor's System ID (e.g. <span style="color:#00e5ff">DOC-XXXXXXXX</span>) to add them to your hospital.</p>
+      <div style="display:flex;gap:.5rem">
+        <input id="hAddId" placeholder="DOC-XXXXXXXX" style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
+        <button onclick="hAddDoc()" style="background:rgba(0,230,118,.14);border:1px solid rgba(0,230,118,.4);color:#00e676;font-family:monospace;font-size:.75rem;padding:.5rem 1rem;border-radius:7px;cursor:pointer">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">YOUR DOCTORS
+        <button onclick="loadHDocs()" style="background:none;border:1px solid rgba(0,200,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">↺ Refresh</button>
+      </div>
+      <div id="hospDocs"><div class="pspin"></div></div>
+    </div>
+    <button class="pbtn out" onclick="hospLogout()" style="max-width:160px;margin-top:.5rem">Sign Out</button>
+  </div>
+</div></div>
+
+<!-- ═══ PATIENT PORTAL ════════════════════════════════════ -->
+<div id="patPortal" class="portal-pg">
+<div class="prw">
+  <div class="prh">🧑 Patient Portal</div>
+  <div class="ptabs">
+    <div class="ptb on" onclick="ptab('pat','setup')">Activate Account</div>
+    <div class="ptb" onclick="ptab('pat','log')">Sign In</div>
+    <div class="ptb" id="patDashTab" style="display:none" onclick="ptab('pat','dash')">My Records</div>
+  </div>
+
+  <!-- Setup -->
+  <div id="pat-setup" class="ptp on">
+    <div id="pSetMsg" class="pmsg"></div>
+    <div class="pinfo">💡 After your Q&amp;A session with the robot, you receive a <strong>System ID</strong> like <strong>USR-XXXXXXXX</strong>. Enter it below to activate your account and view all your health records.</div>
+    <div class="pfield"><label>System ID *</label><input id="pSId" placeholder="USR-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Create Password *</label><input id="pSP" type="password" placeholder="New password"/></div>
+      <div class="pfield"><label>Confirm Password *</label><input id="pSP2" type="password" placeholder="Repeat password"/></div>
+    </div>
+    <div class="pfr">
+      <div class="pfield"><label>Full Name</label><input id="pSN" placeholder="Your name"/></div>
+      <div class="pfield"><label>Date of Birth</label><input id="pSDoB" type="date"/></div>
+    </div>
+    <div class="pfr">
+      <div class="pfield"><label>Phone</label><input id="pSPh" placeholder="+1 000 000 0000"/></div>
+      <div class="pfield"><label>Country</label><input id="pSCo" placeholder="Country"/></div>
+    </div>
+    <button class="pbtn pa" onclick="patSetup()">Activate My Account</button>
+    <button class="pbtn out" onclick="ptab('pat','log')">Already activated? Sign In</button>
+  </div>
+
+  <!-- Login -->
+  <div id="pat-log" class="ptp">
+    <div id="pLogMsg" class="pmsg"></div>
+    <div class="pfield"><label>System ID</label><input id="pLId" placeholder="USR-XXXXXXXX" style="text-transform:uppercase;letter-spacing:.08em;font-family:monospace"/></div>
+    <div class="pfield"><label>Password</label><input id="pLP" type="password"/></div>
+    <button class="pbtn pa" onclick="patLogin()">Sign In</button>
+    <button class="pbtn out" onclick="ptab('pat','setup')">First time? Activate Account</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="pat-dash" class="ptp">
+    <div class="pstats">
+      <div class="pstat"><div class="pstat-v" id="pSysId" style="font-size:.85rem;color:#00e5ff">—</div><div class="pstat-l">System ID</div></div>
+      <div class="pstat"><div class="pstat-v" id="pVisits" style="color:#ffb300">0</div><div class="pstat-l">Total Visits</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">SET PERSONAL DOCTOR</div>
+      <div id="pdocMsg" class="pmsg"></div>
+      <p style="font-family:monospace;font-size:.7rem;color:rgba(255,255,255,.38);margin-bottom:.8rem">The robot will always call your personal doctor first.</p>
+      <div style="display:flex;gap:.5rem">
+        <input id="pdocId" placeholder="DOC-XXXXXXXX" style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
+        <button onclick="setPersonalDoc()" style="background:rgba(255,179,0,.14);border:1px solid rgba(255,179,0,.4);color:#ffb300;font-family:monospace;font-size:.75rem;padding:.5rem 1rem;border-radius:7px;cursor:pointer">Set</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">MY MEDICAL RECORDS
+        <button onclick="loadPatRecs()" style="background:none;border:1px solid rgba(0,200,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">↺ Refresh</button>
+      </div>
+      <div id="patRecs"><div class="pspin"></div></div>
+    </div>
+    <button class="pbtn out" onclick="patLogout()" style="max-width:160px;margin-top:.5rem">Sign Out</button>
+  </div>
+</div></div>
+
+<!-- ═══ PHARMACY PORTAL ═══════════════════════════════════ -->
+<div id="pharmPortal" class="portal-pg">
+<div class="prw">
+  <div class="prh">💊 Pharmacy Portal</div>
+  <div class="ptabs">
+    <div class="ptb on" onclick="ptab('pharm','reg')">Register</div>
+    <div class="ptb" onclick="ptab('pharm','log')">Sign In</div>
+    <div class="ptb" id="pharmDashTab" style="display:none" onclick="ptab('pharm','dash')">Dashboard</div>
+  </div>
+
+  <!-- Register -->
+  <div id="pharm-reg" class="ptp on">
+    <div id="phRegMsg" class="pmsg"></div>
+    <div class="pfield"><label>Pharmacy Name *</label><input id="phRN" placeholder="HealthFirst Pharmacy"/></div>
+    <div class="pfield"><label>Email *</label><input id="phRE" type="email" placeholder="pharmacy@email.com"/></div>
+    <div class="pfield"><label>Password *</label><input id="phRP" type="password" placeholder="Min 8 characters"/></div>
+    <div class="pfr">
+      <div class="pfield"><label>Country</label><input id="phRCo" placeholder="Kenya"/></div>
+      <div class="pfield"><label>City</label><input id="phRCi" placeholder="Nairobi"/></div>
+    </div>
+    <div class="pfr">
+      <div class="pfield"><label>Phone</label><input id="phRPh" placeholder="+254 700 000 000"/></div>
+      <div class="pfield"><label>License No.</label><input id="phRLic" placeholder="Pharmacy license no."/></div>
+    </div>
+    <div class="pfield"><label>Address</label><input id="phRAddr" placeholder="Street, Area, City"/></div>
+    <button class="pbtn pp" onclick="pharmReg()">Register Pharmacy</button>
+    <button class="pbtn out" onclick="ptab('pharm','log')">Already registered? Sign In</button>
+  </div>
+
+  <!-- Login -->
+  <div id="pharm-log" class="ptp">
+    <div id="phLogMsg" class="pmsg"></div>
+    <div class="pfield"><label>Email</label><input id="phLE" type="email"/></div>
+    <div class="pfield"><label>Password</label><input id="phLP" type="password"/></div>
+    <button class="pbtn pp" onclick="pharmLogin()">Sign In</button>
+    <button class="pbtn out" onclick="ptab('pharm','reg')">New pharmacy? Register</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="pharm-dash" class="ptp">
+    <div class="pstats">
+      <div class="pstat"><div class="pstat-v" id="phSysId" style="font-size:.85rem;color:#ffb300">—</div><div class="pstat-l">System ID</div></div>
+      <div class="pstat"><div class="pstat-v" id="phMedCnt" style="color:#c084ff">0</div><div class="pstat-l">Medicines Listed</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">ADD MEDICINE</div>
+      <div id="addMedMsg" class="pmsg"></div>
+      <div class="pfr">
+        <div class="pfield"><label>Medicine Name *</label><input id="mN" placeholder="Paracetamol 500mg"/></div>
+        <div class="pfield"><label>Brand</label><input id="mBr" placeholder="Panadol"/></div>
+      </div>
+      <div class="pfr">
+        <div class="pfield"><label>Category</label><input id="mCat" placeholder="Pain Relief"/></div>
+        <div class="pfield"><label>Dosage</label><input id="mDos" placeholder="500mg twice daily"/></div>
+      </div>
+      <div class="pfr">
+        <div class="pfield"><label>Price ($) *</label><input id="mPr" type="number" step="0.01" placeholder="0.00"/></div>
+        <div class="pfield"><label>Stock *</label><input id="mSt" type="number" placeholder="100"/></div>
+      </div>
+      <div class="pfield"><label>Description</label><textarea id="mDesc" placeholder="What this medicine treats..."></textarea></div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem">
+        <input type="checkbox" id="mRx" style="width:auto">
+        <label for="mRx" style="font-family:monospace;font-size:.75rem;color:rgba(255,255,255,.7)">Requires prescription</label>
+      </div>
+      <button class="pbtn pp" onclick="addMedicine()">Add Medicine</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between">MY MEDICINES
+        <button onclick="loadMyMeds()" style="background:none;border:1px solid rgba(0,200,255,.2);color:#00e5ff;font-family:monospace;font-size:.6rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer">↺ Refresh</button>
+      </div>
+      <div id="myMeds"><div class="pspin"></div></div>
+    </div>
+    <button class="pbtn out" onclick="pharmLogout()" style="max-width:160px;margin-top:.5rem">Sign Out</button>
+  </div>
+</div></div>
+
+<!-- ═══ SHOP ══════════════════════════════════════════════ -->
+<div id="shopPortal" class="portal-pg">
+<div class="prw">
+  <div class="prh">🛒 Medicine Shop</div>
+  <div style="display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap">
+    <input id="shopQ" placeholder="🔍 Search medicine..." oninput="loadShop()" style="flex:1;min-width:140px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
+    <select id="shopCat" onchange="loadShop()" style="background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none">
+      <option value="">All Categories</option>
+      <option>Pain Relief</option><option>Antibiotics</option><option>Vitamins</option>
+      <option>Diabetes</option><option>Heart</option><option>Skin</option><option>Other</option>
+    </select>
+    <input id="shopCo" placeholder="🌍 Country" oninput="loadShop()" style="width:130px;background:rgba(0,0,0,.4);border:1px solid rgba(0,200,255,.14);border-radius:7px;color:rgba(255,255,255,.88);font-family:monospace;font-size:.8rem;padding:.55rem .8rem;outline:none"/>
+  </div>
+  <div class="shop-grid" id="shopGrid"><div class="pspin"></div></div>
+</div>
+<button class="cart-fab" onclick="openCart()">🛒 Cart<span class="cart-cnt" id="cartCnt">0</span></button>
+</div>
+
+<!-- CART MODAL -->
+<div class="modal-bg" id="cartModal">
+  <div class="modal-box">
+    <div class="modal-hd"><div class="modal-title">🛒 CART</div><button class="modal-cls" onclick="closeCart()">✕</button></div>
+    <div id="cartItems"></div>
+    <div id="cartTotal" style="font-family:monospace;font-size:1rem;font-weight:700;color:#ffb300;margin:.8rem 0"></div>
+    <div class="pfield"><label>Delivery Address</label><textarea id="deliveryAddr" placeholder="Your delivery address..."></textarea></div>
+    <button class="pbtn pp" onclick="placeOrder()">Place Order</button>
+  </div>
+</div>
+
+<!-- ═══ PORTAL JS ════════════════════════════════════════ -->
+<script>
+'use strict';
+const PAPI = 'https://backend-jzw7.onrender.com';
+const ptok = { hosp:null, pat:null, pharm:null };
+let pCart = [];
+
+/* ── Portal navigation ── */
+function showPortal(p) {
+  const map = {
+    doctor: ['signinScreen','dashboard'],
+    hosp:   ['hospPortal'],
+    pat:    ['patPortal'],
+    pharm:  ['pharmPortal'],
+    shop:   ['shopPortal']
+  };
+  // Hide all portals
+  ['signinScreen','dashboard','hospPortal','patPortal','pharmPortal','shopPortal']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  // Show target
+  (map[p] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (id === 'dashboard') ? 'flex' : 'block';
+  });
+  // Update nav tabs
+  document.querySelectorAll('.pnav-tab').forEach((t,i) => {
+    t.classList.toggle('on', ['doctor','hosp','pat','pharm','shop'][i] === p);
+  });
+  // Auto-load shop
+  if (p === 'shop') loadShop();
+}
+
+/* ── Sub-tabs ── */
+function ptab(portal, which) {
+  const prefixes = { hosp:'hosp-', pat:'pat-', pharm:'pharm-' };
+  const pfx = prefixes[portal];
+  document.querySelectorAll(`[id^="${pfx}"]`).forEach(el => el.classList.remove('on'));
+  document.getElementById(pfx + which)?.classList.add('on');
+  // Update tab buttons
+  const tabs = { hosp: ['reg','log','dash'], pat: ['setup','log','dash'], pharm: ['reg','log','dash'] };
+  const allTabs = document.querySelectorAll(`#${portal}Portal .ptb`);
+  allTabs.forEach((t, i) => t.classList.toggle('on', (tabs[portal]||[])[i] === which));
+}
+
+/* ── API helper ── */
+async function pReq(method, path, body, token) {
+  const h = {'Content-Type':'application/json'};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(PAPI + path, { method, headers: h, body: body ? JSON.stringify(body) : null });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.detail || d.message || `Error ${r.status}`);
+  return d;
+}
+function pv(id) { return document.getElementById(id)?.value || ''; }
+function psv(id, v) { const e = document.getElementById(id); if (e && v != null) e.value = v; }
+function pMsg(id, type, txt) { const e = document.getElementById(id); if (!e) return; e.className = `pmsg ${type}`; e.textContent = txt; }
+function pFmt(ts) { if (!ts) return '—'; return new Date(ts).toLocaleString('en', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+
+/* ════ HOSPITAL ════ */
+async function hospReg() {
+  const n=pv('hRN'),e=pv('hRE'),p=pv('hRP');
+  if (!n||!e||!p) return pMsg('hRegMsg','er','Name, email and password required');
+  if (p.length < 8) return pMsg('hRegMsg','er','Password must be at least 8 characters');
+  try {
+    pMsg('hRegMsg','inf','Registering…');
+    const r = await pReq('POST','/api/hospitals/register',{name:n,email:e,password:p,
+      country:pv('hRCo'),city:pv('hRCi'),phone:pv('hRPh'),registration_no:pv('hRReg'),address:pv('hRAddr')});
+    ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
+    pMsg('hRegMsg','ok',`✅ Registered! System ID: ${r.system_id} — Save this, give it to your robot operator.`);
+    setTimeout(() => loadHospDash(), 1800);
+  } catch(e) { pMsg('hRegMsg','er', e.message); }
+}
+async function hospLogin() {
+  try {
+    pMsg('hLogMsg','inf','Signing in…');
+    const r = await pReq('POST','/api/hospitals/login',{email:pv('hLE'),password:pv('hLP')});
+    ptok.hosp = r.token; localStorage.setItem('t_hosp', r.token);
+    loadHospDash();
+  } catch(e) { pMsg('hLogMsg','er', e.message); }
+}
+async function loadHospDash() {
+  ptab('hosp','dash');
+  document.getElementById('hospDashTab').style.display = '';
+  try {
+    const me = await pReq('GET','/api/hospitals/me',null,ptok.hosp);
+    document.getElementById('hSysId').textContent = me.system_id;
+    loadHDocs();
+  } catch(e) {}
+}
+async function loadHDocs() {
+  const el = document.getElementById('hospDocs'); el.innerHTML = '<div class="pspin"></div>';
+  try {
+    const r = await pReq('GET','/api/hospitals/doctors',null,ptok.hosp);
+    const docs = r.doctors || [];
+    document.getElementById('hDocCnt').textContent = docs.length;
+    document.getElementById('hOnCnt').textContent  = docs.filter(d => d.is_online).length;
+    if (!docs.length) { el.innerHTML = '<div class="pempty">No doctors yet. Add one above.</div>'; return; }
+    el.innerHTML = `<div class="pdg">${docs.map(d=>`
+      <div class="pdc"><div class="pdct"><div class="pdav">${d.avatar||'👨‍⚕️'}</div>
+        <div><div class="pdn">Dr. ${d.name}</div><div class="pdsp">${d.specialty||'General'}</div></div>
+      </div>
+      <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+        ${d.city?`<span style="font-family:monospace;font-size:.65rem;color:rgba(255,255,255,.38)">📍${d.city}</span>`:''}
+        <span class="pbadge ${d.is_online?'on':'off'}">${d.is_online?'● Online':'○ Offline'}</span>
+      </div>
+      <div style="margin-top:.6rem">
+        <button class="pbsm" onclick="hRemDoc('${d.system_id}')">Remove</button>
+      </div>
+    </div>`).join('')}</div>`;
+  } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
+}
+async function hAddDoc() {
+  const sid = pv('hAddId').trim().toUpperCase();
+  if (!sid) return pMsg('hAddMsg','er','Enter a doctor System ID');
+  try {
+    pMsg('hAddMsg','inf','Adding…');
+    const r = await pReq('POST','/api/hospitals/add-doctor',{doctor_system_id:sid},ptok.hosp);
+    pMsg('hAddMsg','ok', r.message);
+    document.getElementById('hAddId').value = '';
+    loadHDocs();
+  } catch(e) { pMsg('hAddMsg','er', e.message); }
+}
+async function hRemDoc(sid) {
+  if (!confirm('Remove this doctor from your hospital?')) return;
+  try {
+    await pReq('POST','/api/hospitals/remove-doctor',{doctor_system_id:sid},ptok.hosp);
+    loadHDocs();
+  } catch(e) { alert(e.message); }
+}
+function hospLogout() { ptok.hosp=null; localStorage.removeItem('t_hosp'); ptab('hosp','reg'); document.getElementById('hospDashTab').style.display='none'; }
+
+/* ════ PATIENT ════ */
+async function patSetup() {
+  const sid=pv('pSId').trim().toUpperCase(), p=pv('pSP'), p2=pv('pSP2');
+  if (!sid) return pMsg('pSetMsg','er','Enter your System ID from the robot session');
+  if (p !== p2) return pMsg('pSetMsg','er','Passwords do not match');
+  if (p.length < 6) return pMsg('pSetMsg','er','Password must be at least 6 characters');
+  try {
+    pMsg('pSetMsg','inf','Activating…');
+    const r = await pReq('POST','/api/patients/setup',{system_id:sid,password:p,
+      name:pv('pSN'),phone:pv('pSPh'),country:pv('pSCo'),date_of_birth:pv('pSDoB')||null});
+    ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
+    loadPatDash();
+  } catch(e) { pMsg('pSetMsg','er', e.message); }
+}
+async function patLogin() {
+  try {
+    pMsg('pLogMsg','inf','Signing in…');
+    const r = await pReq('POST','/api/patients/login',{system_id:pv('pLId').trim().toUpperCase(),password:pv('pLP')});
+    ptok.pat = r.token; localStorage.setItem('t_pat', r.token);
+    loadPatDash();
+  } catch(e) { pMsg('pLogMsg','er', e.message); }
+}
+async function loadPatDash() {
+  ptab('pat','dash');
+  document.getElementById('patDashTab').style.display = '';
+  try {
+    const me = await pReq('GET','/api/patients/me',null,ptok.pat);
+    document.getElementById('pSysId').textContent = me.system_id;
+    loadPatRecs();
+  } catch(e) {}
+}
+async function setPersonalDoc() {
+  const sid = pv('pdocId').trim().toUpperCase();
+  if (!sid) return pMsg('pdocMsg','er','Enter a doctor System ID');
+  try {
+    pMsg('pdocMsg','inf','Setting…');
+    const r = await pReq('POST','/api/patients/set-personal-doctor',{doctor_system_id:sid},ptok.pat);
+    pMsg('pdocMsg','ok', r.message);
+  } catch(e) { pMsg('pdocMsg','er', e.message); }
+}
+async function loadPatRecs() {
+  const el = document.getElementById('patRecs'); el.innerHTML = '<div class="pspin"></div>';
+  try {
+    const r = await pReq('GET','/api/patients/records',null,ptok.pat);
+    const recs = r.records || [];
+    document.getElementById('pVisits').textContent = recs.length;
+    if (!recs.length) { el.innerHTML = '<div class="pempty">No records yet. Complete a robot Q&A session first.</div>'; return; }
+    el.innerHTML = recs.map(rec => `
+      <div class="prec">
+        <div class="prec-h"><span style="color:#00e5ff;font-weight:600">Visit — ${pFmt(rec.timestamp)}</span></div>
+        <div class="pvrow">
+          ${rec.temperature?`<div class="pvc"><div class="pvc-v">${rec.temperature}°C</div><div class="pvc-l">Temp</div></div>`:''}
+          ${rec.heart_rate?`<div class="pvc"><div class="pvc-v">${Math.round(rec.heart_rate)}</div><div class="pvc-l">HR</div></div>`:''}
+          ${rec.spo2?`<div class="pvc"><div class="pvc-v">${rec.spo2}%</div><div class="pvc-l">SpO₂</div></div>`:''}
+          ${rec.systolic?`<div class="pvc"><div class="pvc-v">${rec.systolic}/${rec.diastolic}</div><div class="pvc-l">BP</div></div>`:''}
+          ${rec.weight?`<div class="pvc"><div class="pvc-v">${(rec.weight/1000).toFixed(1)}kg</div><div class="pvc-l">Weight</div></div>`:''}
+          ${rec.bmi?`<div class="pvc"><div class="pvc-v">${parseFloat(rec.bmi).toFixed(1)}</div><div class="pvc-l">BMI</div></div>`:''}
+        </div>
+        ${rec.chief_complaint?`<div style="font-size:.78rem;padding:.4rem .6rem;background:rgba(255,179,0,.05);border-left:2px solid #ffb300;border-radius:4px">💬 ${rec.chief_complaint}</div>`:''}
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
+}
+function patLogout() { ptok.pat=null; localStorage.removeItem('t_pat'); ptab('pat','setup'); document.getElementById('patDashTab').style.display='none'; }
+
+/* ════ PHARMACY ════ */
+async function pharmReg() {
+  const n=pv('phRN'),e=pv('phRE'),p=pv('phRP');
+  if (!n||!e||!p) return pMsg('phRegMsg','er','Name, email and password required');
+  if (p.length < 8) return pMsg('phRegMsg','er','Password must be at least 8 characters');
+  try {
+    pMsg('phRegMsg','inf','Registering…');
+    const r = await pReq('POST','/api/pharmacies/register',{name:n,email:e,password:p,
+      country:pv('phRCo'),city:pv('phRCi'),phone:pv('phRPh'),license_no:pv('phRLic'),address:pv('phRAddr')});
+    ptok.pharm = r.token; localStorage.setItem('t_pharm', r.token);
+    pMsg('phRegMsg','ok',`✅ Registered! System ID: ${r.system_id}`);
+    setTimeout(() => loadPharmDash(), 1800);
+  } catch(e) { pMsg('phRegMsg','er', e.message); }
+}
+async function pharmLogin() {
+  try {
+    pMsg('phLogMsg','inf','Signing in…');
+    const r = await pReq('POST','/api/pharmacies/login',{email:pv('phLE'),password:pv('phLP')});
+    ptok.pharm = r.token; localStorage.setItem('t_pharm', r.token);
+    loadPharmDash();
+  } catch(e) { pMsg('phLogMsg','er', e.message); }
+}
+async function loadPharmDash() {
+  ptab('pharm','dash');
+  document.getElementById('pharmDashTab').style.display = '';
+  try {
+    const me = await pReq('GET','/api/pharmacies/me',null,ptok.pharm);
+    document.getElementById('phSysId').textContent = me.system_id;
+    loadMyMeds();
+  } catch(e) {}
+}
+async function addMedicine() {
+  const n=pv('mN'),pr=parseFloat(pv('mPr')),st=parseInt(pv('mSt'));
+  if (!n||isNaN(pr)) return pMsg('addMedMsg','er','Name and price required');
+  try {
+    pMsg('addMedMsg','inf','Adding…');
+    await pReq('POST','/api/pharmacies/medicines',{name:n,brand:pv('mBr'),category:pv('mCat'),
+      dosage:pv('mDos'),description:pv('mDesc'),price:pr,stock:st||0,
+      requires_prescription:document.getElementById('mRx')?.checked||false},ptok.pharm);
+    pMsg('addMedMsg','ok','Medicine added!');
+    ['mN','mBr','mCat','mDos','mDesc','mPr','mSt'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    loadMyMeds();
+  } catch(e) { pMsg('addMedMsg','er', e.message); }
+}
+async function loadMyMeds() {
+  const el = document.getElementById('myMeds'); el.innerHTML = '<div class="pspin"></div>';
+  try {
+    const r = await pReq('GET','/api/pharmacies/medicines',null,ptok.pharm);
+    const meds = r.medicines || [];
+    document.getElementById('phMedCnt').textContent = meds.length;
+    if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines yet. Add one above.</div>'; return; }
+    el.innerHTML = `<table class="ptable"><thead><tr>
+      <th>Name</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Rx</th><th></th>
+    </tr></thead><tbody>${meds.map(m=>`<tr>
+      <td style="font-weight:600">${m.name}</td>
+      <td style="color:rgba(255,255,255,.38)">${m.brand||'—'}</td>
+      <td>${m.category||'—'}</td>
+      <td style="font-family:monospace;color:#ffb300">$${m.price}</td>
+      <td>${m.stock}</td>
+      <td>${m.requires_prescription?'✅':'—'}</td>
+      <td><button class="pbsm" onclick="delMed(${m.id})">Delete</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
+}
+async function delMed(id) {
+  if (!confirm('Delete this medicine?')) return;
+  try { await pReq('DELETE',`/api/pharmacies/medicines/${id}`,null,ptok.pharm); loadMyMeds(); }
+  catch(e) { alert(e.message); }
+}
+function pharmLogout() { ptok.pharm=null; localStorage.removeItem('t_pharm'); ptab('pharm','reg'); document.getElementById('pharmDashTab').style.display='none'; }
+
+/* ════ SHOP ════ */
+async function loadShop() {
+  const el = document.getElementById('shopGrid'); el.innerHTML = '<div class="pspin"></div>';
+  try {
+    const r = await pReq('GET',`/api/shop/medicines?search=${encodeURIComponent(pv('shopQ'))}&category=${encodeURIComponent(pv('shopCat'))}&country=${encodeURIComponent(pv('shopCo'))}&page=1`);
+    const meds = r.medicines || [];
+    if (!meds.length) { el.innerHTML = '<div class="pempty">No medicines found.</div>'; return; }
+    el.innerHTML = meds.map(m => `
+      <div class="smc">
+        <div class="smn">${m.name}${m.requires_prescription?' <span style="color:#ff4444;font-size:.65rem">Rx</span>':''}</div>
+        <div class="smb">${m.brand||''} ${m.category?'· '+m.category:''}</div>
+        ${m.dosage?`<div style="font-size:.68rem;color:rgba(255,255,255,.38);margin-bottom:.4rem">${m.dosage}</div>`:''}
+        <div class="smp">$${m.price}</div>
+        <div class="sms">📍 ${m.pharmacy_name} · ${m.pharmacy_city||''}</div>
+        <div class="sms">Stock: ${m.stock}</div>
+        <button onclick='sAddCart(${JSON.stringify({id:m.id,name:m.name,price:m.price,pharmacy_id:m.pharmacy_id,pharmacy_name:m.pharmacy_name})})' style="display:block;width:100%;margin-top:.6rem;padding:.38rem;background:linear-gradient(135deg,#c084ff,#7c4dff);border:none;border-radius:6px;color:#fff;font-family:monospace;font-size:.72rem;cursor:pointer">Add to Cart</button>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="pempty">${e.message}</div>`; }
+}
+function sAddCart(med) {
+  const ex = pCart.find(i => i.id === med.id);
+  if (ex) ex.qty++; else pCart.push({...med, qty:1});
+  document.getElementById('cartCnt').textContent = pCart.reduce((s,i)=>s+i.qty,0);
+}
+function openCart() { renderCart(); document.getElementById('cartModal').classList.add('on'); }
+function closeCart() { document.getElementById('cartModal').classList.remove('on'); }
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  if (!pCart.length) { el.innerHTML = '<div class="pempty">Cart is empty</div>'; document.getElementById('cartTotal').textContent=''; return; }
+  el.innerHTML = pCart.map((i,idx) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem 0;border-bottom:1px solid rgba(0,200,255,.08)">
+      <div><div style="font-weight:600;font-size:.82rem">${i.name}</div><div style="font-family:monospace;font-size:.65rem;color:rgba(255,255,255,.38)">${i.pharmacy_name}</div></div>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <button onclick="cQty(${idx},-1)" style="background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);width:22px;height:22px;border-radius:4px;cursor:pointer">−</button>
+        <span style="font-family:monospace">${i.qty}</span>
+        <button onclick="cQty(${idx},+1)" style="background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);width:22px;height:22px;border-radius:4px;cursor:pointer">+</button>
+        <span style="font-family:monospace;color:#ffb300;min-width:48px;text-align:right">$${(i.price*i.qty).toFixed(2)}</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('cartTotal').textContent = `Total: $${pCart.reduce((s,i)=>s+i.price*i.qty,0).toFixed(2)}`;
+}
+function cQty(idx, d) {
+  pCart[idx].qty += d;
+  if (pCart[idx].qty <= 0) pCart.splice(idx,1);
+  document.getElementById('cartCnt').textContent = pCart.reduce((s,i)=>s+i.qty,0);
+  renderCart();
+}
+async function placeOrder() {
+  if (!pCart.length) return alert('Cart is empty');
+  try {
+    const r = await pReq('POST','/api/shop/order',{
+      items: pCart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty,pharmacy_id:i.pharmacy_id})),
+      delivery_address: pv('deliveryAddr')
+    }, ptok.pat || null);
+    pCart = []; document.getElementById('cartCnt').textContent = '0';
+    closeCart();
+    alert(`Order #${r.order_id} placed! Total: $${r.total}`);
+  } catch(e) { alert(e.message); }
+}
+
+/* ── Auto-restore portal sessions ── */
+window.addEventListener('DOMContentLoaded', () => {
+  const th = localStorage.getItem('t_hosp');
+  const tp = localStorage.getItem('t_pat');
+  const tph = localStorage.getItem('t_pharm');
+  if (th) { ptok.hosp = th; }
+  if (tp) { ptok.pat = tp; }
+  if (tph) { ptok.pharm = tph; }
 });
 </script>
 </body>
