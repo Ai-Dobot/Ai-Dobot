@@ -1611,8 +1611,17 @@ async function pReq(method, path, body, token) {
   const h = {'Content-Type':'application/json'};
   if (token) h['Authorization'] = `Bearer ${token}`;
   const r = await fetch(PAPI + path, { method, headers: h, body: body ? JSON.stringify(body) : null });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.detail || d.message || `Error ${r.status}`);
+  const text = await r.text();
+  let d = {};
+  try { d = text ? JSON.parse(text) : {}; } catch (e) {
+    if (!r.ok) throw new Error(`HTTP ${r.status} — not JSON`);
+    throw new Error('Invalid JSON from server');
+  }
+  if (!r.ok) {
+    const det = d.detail;
+    const msg = Array.isArray(det) ? det.map(x => x.msg || x).join('; ') : (det || d.message || `Error ${r.status}`);
+    throw new Error(msg);
+  }
   return d;
 }
 async function pReqFormData(method, path, formData, token) {
@@ -1624,11 +1633,25 @@ async function pReqFormData(method, path, formData, token) {
   return d;
 }
 let _countriesCache = null;
+/* If Render/third-party APIs fail, shop still works for common countries */
+const _FALLBACK_COUNTRIES_CLIENT = [
+  'Argentina','Australia','Bangladesh','Brazil','Canada','China','Colombia','Egypt','France','Germany','Ghana','India',
+  'Indonesia','Italy','Japan','Kenya','Malaysia','Mexico','Nigeria','Pakistan','Philippines','Saudi Arabia','South Africa',
+  'Spain','Thailand','Turkey','Uganda','United Arab Emirates','United Kingdom','United States','Vietnam','Zambia','Zimbabwe'
+];
 async function fetchCountriesList() {
   if (_countriesCache && _countriesCache.length) return _countriesCache;
-  const d = await pReq('GET', '/api/shop/locations/countries', null, null);
-  _countriesCache = d.countries || [];
-  return _countriesCache;
+  try {
+    const d = await pReq('GET', '/api/shop/locations/countries', null, null);
+    let list = Array.isArray(d.countries) ? d.countries.filter(Boolean) : [];
+    if (!list.length) list = _FALLBACK_COUNTRIES_CLIENT.slice();
+    _countriesCache = list.slice().sort((a, b) => a.localeCompare(b));
+    return _countriesCache;
+  } catch (e) {
+    console.warn('[fetchCountriesList]', e.message || e);
+    _countriesCache = _FALLBACK_COUNTRIES_CLIENT.slice().sort((a, b) => a.localeCompare(b));
+    return _countriesCache;
+  }
 }
 function fillSelectOptions(sel, items, placeholder) {
   if (!sel) return;
@@ -1669,7 +1692,13 @@ async function initPharmRegCountries() {
     co.dataset.ready = '1';
     co.onchange = () => loadRegionsIntoSelect(reg, co.value);
   } catch (e) {
-    co.innerHTML = '<option value="">Could not load countries</option>';
+    try {
+      fillSelectOptions(co, await fetchCountriesList(), 'Select country…');
+      co.dataset.ready = '1';
+      co.onchange = () => loadRegionsIntoSelect(reg, co.value);
+    } catch (e2) {
+      co.innerHTML = '<option value="">Could not load countries</option>';
+    }
   }
 }
 async function initPharmDashLocation(me) {
@@ -2105,7 +2134,13 @@ async function loadShopFiltersOnce() {
     co.addEventListener('change', onShopCountryChange);
     _shopFiltersReady = true;
   } catch (e) {
-    co.innerHTML = '<option value="">Could not load countries</option>';
+    try {
+      fillSelectOptions(co, await fetchCountriesList(), 'Country…');
+      co.addEventListener('change', onShopCountryChange);
+      _shopFiltersReady = true;
+    } catch (e2) {
+      co.innerHTML = '<option value="">Could not load countries</option>';
+    }
   }
 }
 async function onShopCountryChange() {
